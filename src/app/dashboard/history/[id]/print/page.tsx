@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use } from 'react';
@@ -29,6 +28,15 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
   }, [db, user, transaction]);
 
   const { data: account, loading: accLoading } = useDoc<BankAccount>(accountRef);
+
+  const isReceived = transaction?.type === 'received';
+  const payerName = isReceived ? transaction?.recipientName : (user?.displayName || 'Business Account');
+  const payeeName = isReceived ? (user?.displayName || user?.email || 'Valued Recipient') : transaction?.recipientName;
+  
+  // For received checks, we use the recipientAddress as the payer's address if available
+  const payerAddress = isReceived 
+    ? transaction?.recipientAddress 
+    : (account?.bankAddress || 'Authorized E-Check Issuer\nDigital Payment Service');
 
   const amountInWords = (num: number) => {
     const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
@@ -87,10 +95,10 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
         <div className="flex gap-4">
           <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="w-4 h-4 text-accent" />
-            Verified U.S. Business E-Check Format
+            {isReceived ? 'Official Copy of Received E-Check' : 'Verified U.S. Business E-Check Format'}
           </div>
           <Button onClick={() => window.print()} className="bg-accent hover:bg-accent/90">
-            <Printer className="w-4 h-4 mr-2" /> Print Check
+            <Printer className="w-4 h-4 mr-2" /> Print {isReceived ? 'Copy' : 'Check'}
           </Button>
         </div>
       </div>
@@ -100,9 +108,9 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
           {/* Header */}
           <div className="flex justify-between items-start mb-12">
             <div>
-              <p className="font-bold text-lg uppercase tracking-wider">{user?.displayName || 'Business Account'}</p>
+              <p className="font-bold text-lg uppercase tracking-wider">{payerName}</p>
               <p className="text-sm text-slate-500 whitespace-pre-line">
-                {account?.bankAddress || 'Authorized E-Check Issuer\nDigital Payment Service'}
+                {payerAddress}
               </p>
             </div>
             <div className="text-right">
@@ -118,7 +126,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
           <div className="flex items-end gap-4 mb-8">
             <span className="text-sm font-bold uppercase min-w-[120px]">Pay to the Order of:</span>
             <div className="flex-1 border-b-2 border-slate-300 pb-1 font-semibold text-lg">
-              {transaction.recipientName}
+              {payeeName}
             </div>
             <div className="relative flex items-center">
               <span className="absolute left-2 font-bold">$</span>
@@ -162,7 +170,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
         </div>
 
         <div className="mt-12 no-print text-center text-xs text-muted-foreground border-t pt-4">
-          This is a legally valid e-check format. Use laser check stock for best results.
+          This is a legally valid e-check format. {isReceived ? 'This document serves as a record copy.' : 'Use laser check stock for best results.'}
         </div>
       </div>
     </div>
