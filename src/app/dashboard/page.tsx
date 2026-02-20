@@ -8,6 +8,7 @@ import { useFirestore, useUser, useCollection } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { TransactionList } from '@/components/dashboard/transaction-list';
+import { Transaction, BankAccount } from '@/lib/types';
 
 export default function DashboardOverview() {
   const db = useFirestore();
@@ -27,11 +28,11 @@ export default function DashboardOverview() {
     return collection(db, 'users', user.uid, 'accounts');
   }, [db, user]);
 
-  const { data: transactions, loading: txLoading } = useCollection(transactionsQuery);
-  const { data: accounts, loading: accLoading } = useCollection(accountsQuery);
+  const { data: transactions, loading: txLoading } = useCollection<Transaction>(transactionsQuery as any);
+  const { data: accounts, loading: accLoading } = useCollection<BankAccount>(accountsQuery as any);
 
   const totalBalance = (transactions || []).reduce((acc, tx) => 
-    tx.type === 'received' ? acc + tx.amount : tx.type === 'sent' ? acc - tx.amount : acc, 10500.25);
+    tx.type === 'received' ? acc + tx.amount : tx.type === 'sent' ? acc - tx.amount : acc, 0);
 
   const pendingCount = (transactions || []).filter(tx => tx.status === 'pending').length;
 
@@ -41,13 +42,13 @@ export default function DashboardOverview() {
         <Card className="bg-primary text-primary-foreground border-none shadow-md overflow-hidden relative">
           <div className="absolute top-0 right-0 p-4 opacity-20"><Wallet className="w-12 h-12" /></div>
           <CardHeader className="pb-2">
-            <CardDescription className="text-primary-foreground/80 font-medium">Estimated Balance</CardDescription>
+            <CardDescription className="text-primary-foreground/80 font-medium">Net Transaction Volume</CardDescription>
             <CardTitle className="text-3xl font-headline font-bold">
               ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-primary-foreground/70">Refreshed in real-time</p>
+            <p className="text-xs text-primary-foreground/70">Calculated from history</p>
           </CardContent>
         </Card>
 
@@ -117,12 +118,12 @@ export default function DashboardOverview() {
           <h2 className="text-xl font-headline font-bold">Quick Insights</h2>
           <Card className="shadow-sm border-none">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Data Summary</CardTitle>
+              <CardTitle className="text-base">Real-time Sync</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Your transactions and account data are now securely stored and synchronized across all your devices using Firebase Cloud Firestore.
+                  Your transactions and account data are securely stored and synchronized across all your devices using Firebase Cloud Firestore.
                 </p>
               </div>
             </CardContent>
@@ -137,7 +138,7 @@ export default function DashboardOverview() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                All connections are encrypted. Bank details are never stored in plain text.
+                All connections are encrypted. Bank details are never stored in plain text and are scoped to your unique account.
               </p>
             </CardContent>
           </Card>

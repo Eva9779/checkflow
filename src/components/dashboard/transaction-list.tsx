@@ -1,4 +1,6 @@
-import { Transaction } from '@/lib/store';
+'use client';
+
+import { Transaction } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { ArrowUpRight, ArrowDownLeft, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
