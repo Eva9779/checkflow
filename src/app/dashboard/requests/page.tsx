@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -11,6 +10,8 @@ import { QrCode, Share2, Copy, CheckCircle2, Loader2, Download } from 'lucide-re
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 import Image from 'next/image';
 
 export default function RequestPaymentPage() {
@@ -33,12 +34,19 @@ export default function RequestPaymentPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !user) return;
+
+    const amountNum = parseFloat(formData.amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      toast({ title: "Invalid Amount", description: "Please enter a valid payment amount.", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
 
     const txData = {
       type: 'requested',
       recipientName: formData.payerName,
-      amount: parseFloat(formData.amount),
+      amount: amountNum,
       memo: `Request: ${formData.purpose}`,
       status: 'pending',
       date: new Date().toISOString().split('T')[0],
@@ -48,19 +56,26 @@ export default function RequestPaymentPage() {
     const txRef = collection(db, 'users', user.uid, 'transactions');
     addDoc(txRef, txData)
       .then((docRef) => {
-        const url = `https://echeckflow.com/pay/req_${docRef.id}`;
+        // Generate a link based on the current origin for testing/live usage
+        const origin = window.location.origin;
+        const url = `${origin}/pay/req_${docRef.id}`;
         setRequestUrl(url);
         setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`);
         toast({ title: "Payment Request Created" });
       })
-      .catch((error) => {
-        console.error(error);
-        toast({ title: "Failed to create request", variant: "destructive" });
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: txRef.path,
+          operation: 'create',
+          requestResourceData: txData
+        });
+        errorEmitter.emit('permission-error', permissionError);
       })
       .finally(() => setLoading(false));
   };
 
   const copyToClipboard = () => {
+    if (!requestUrl) return;
     navigator.clipboard.writeText(requestUrl);
     toast({ title: "Copied Link!" });
   };
@@ -88,12 +103,11 @@ export default function RequestPaymentPage() {
             <div className="flex justify-center bg-white p-6 rounded-2xl shadow-sm inline-block mx-auto border border-accent/20">
               {qrCodeUrl && (
                 <div className="relative w-[200px] h-[200px]">
-                  <img 
+                  <Image 
                     src={qrCodeUrl} 
                     alt="Payment Request QR Code" 
-                    width={200}
-                    height={200}
-                    className="mx-auto"
+                    fill
+                    className="object-contain"
                   />
                 </div>
               )}
