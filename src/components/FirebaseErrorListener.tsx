@@ -9,15 +9,12 @@ export function FirebaseErrorListener() {
 
   useEffect(() => {
     const handlePermissionError = (error: any) => {
-      // In a real app, you might show a more detailed overlay in development
-      // For now, we use a toast to notify the user/developer
       toast({
         variant: 'destructive',
         title: 'Security Rule Denied',
         description: error.message,
       });
       
-      // We throw the error so it shows up in the Next.js error overlay during development
       if (process.env.NODE_ENV === 'development') {
         throw error;
       }
