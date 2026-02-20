@@ -27,4 +27,5 @@ export interface Transaction {
   payerRoutingNumber?: string;
   payerAccountNumber?: string;
   payerBankAddress?: string;
+  signatureData?: string;
 }

@@ -33,7 +33,8 @@
         "payerBankName": { "type": "string" },
         "payerRoutingNumber": { "type": "string" },
         "payerAccountNumber": { "type": "string" },
-        "payerBankAddress": { "type": "string" }
+        "payerBankAddress": { "type": "string" },
+        "signatureData": { "type": "string", "description": "Base64 encoded signature image for authorization" }
       },
       "required": ["type", "recipientName", "amount", "status", "date"]
     }

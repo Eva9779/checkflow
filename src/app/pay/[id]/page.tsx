@@ -1,7 +1,7 @@
 
 'use client';
 
-import { use, useMemo, useState } from 'react';
+import { use, useMemo, useState, useRef, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDoc, useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ShieldCheck, Loader2, Building2, Calendar, CreditCard, CheckCircle2, Lock } from 'lucide-react';
+import { ShieldCheck, Loader2, Building2, Calendar, CreditCard, CheckCircle2, Lock, PenTool, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -20,7 +20,6 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ id: st
   const searchParams = useSearchParams();
   const userId = searchParams.get('u');
   const db = useFirestore();
-  const router = useRouter();
   const { toast } = useToast();
 
   const [isFulfilling, setIsFulfilling] = useState(false);
@@ -33,12 +32,76 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ id: st
     accountNumber: '',
   });
 
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasSigned, setHasSigned] = useState(false);
+
   const txRef = useMemo(() => {
     if (!db || !userId || !id) return null;
     return doc(db, 'users', userId, 'transactions', id);
   }, [db, userId, id]);
 
   const { data: transaction, loading } = useDoc<Transaction>(txRef);
+
+  // Canvas Drawing Logic
+  useEffect(() => {
+    if (isFulfilling && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+      }
+    }
+  }, [isFulfilling]);
+
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDrawing(true);
+    setHasSigned(true);
+    draw(e);
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+    if (canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      ctx?.beginPath();
+    }
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawing || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    let x, y;
+
+    if ('touches' in e) {
+      x = e.touches[0].clientX - rect.left;
+      y = e.touches[0].clientY - rect.top;
+    } else {
+      x = (e as React.MouseEvent).clientX - rect.left;
+      y = (e as React.MouseEvent).clientY - rect.top;
+    }
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+      setHasSigned(false);
+    }
+  };
 
   const handleFulfill = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,14 +112,24 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ id: st
       return;
     }
 
+    if (!hasSigned) {
+      toast({ title: "Signature Required", description: "Please sign to authorize the e-check.", variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
+    
+    // Get signature as data URL
+    const signatureData = canvasRef.current?.toDataURL('image/png');
+
     const updateData = {
       payerBankName: payerInfo.bankName,
       payerBankAddress: payerInfo.bankAddress,
       payerRoutingNumber: payerInfo.routingNumber,
       payerAccountNumber: payerInfo.accountNumber,
-      status: 'completed',
-      recipientAddress: payerInfo.bankAddress, // Update the record for the check face
+      signatureData: signatureData || null,
+      status: 'completed' as const,
+      recipientAddress: payerInfo.bankAddress,
     };
 
     updateDoc(txRef, updateData)
@@ -158,7 +231,7 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ id: st
                     <ShieldCheck className="w-4 h-4" /> Secure Authorization
                   </p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    By clicking authorize, you will be prompted to provide your U.S. business bank details to generate a digital check. This is encrypted and sent only to the authorized requester.
+                    By clicking authorize, you will provide your U.S. business bank details and a digital signature to generate a legally valid e-check.
                   </p>
                 </div>
 
@@ -166,7 +239,7 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ id: st
                   onClick={() => setIsFulfilling(true)}
                   className="w-full bg-accent hover:bg-accent/90 h-14 text-lg font-bold shadow-md"
                 >
-                  Authorize Payment
+                  Authorize & Sign
                 </Button>
               </CardContent>
             </>
@@ -174,53 +247,86 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ id: st
             <form onSubmit={handleFulfill}>
               <CardHeader className="bg-slate-50 border-b">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-accent" /> Bank Details
+                  <Lock className="w-4 h-4 text-accent" /> Bank & Authorization
                 </CardTitle>
-                <CardDescription>Enter your U.S. business account information.</CardDescription>
+                <CardDescription>Enter bank details and sign below.</CardDescription>
               </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="bankName">Bank Name</Label>
-                  <Input 
-                    id="bankName" 
-                    placeholder="e.g. Chase, Bank of America" 
-                    required 
-                    value={payerInfo.bankName}
-                    onChange={e => setPayerInfo({...payerInfo, bankName: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bankAddress">Your Business Address</Label>
-                  <Input 
-                    id="bankAddress" 
-                    placeholder="Street, City, State, Zip" 
-                    required 
-                    value={payerInfo.bankAddress}
-                    onChange={e => setPayerInfo({...payerInfo, bankAddress: e.target.value})}
-                  />
-                </div>
-                <div className="grid grid-cols-1 gap-4">
+              <CardContent className="pt-6 space-y-6">
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="routing">Routing Number (9 Digits)</Label>
+                    <Label htmlFor="bankName">Bank Name</Label>
                     <Input 
-                      id="routing" 
-                      placeholder="000000000" 
-                      maxLength={9} 
+                      id="bankName" 
+                      placeholder="e.g. Chase, Bank of America" 
                       required 
-                      value={payerInfo.routingNumber}
-                      onChange={e => setPayerInfo({...payerInfo, routingNumber: e.target.value.replace(/\D/g, '')})}
+                      value={payerInfo.bankName}
+                      onChange={e => setPayerInfo({...payerInfo, bankName: e.target.value})}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="account">Account Number</Label>
+                    <Label htmlFor="bankAddress">Business Address</Label>
                     <Input 
-                      id="account" 
-                      type="password"
-                      placeholder="Your Account Number" 
+                      id="bankAddress" 
+                      placeholder="Street, City, State, Zip" 
                       required 
-                      value={payerInfo.accountNumber}
-                      onChange={e => setPayerInfo({...payerInfo, accountNumber: e.target.value.replace(/\D/g, '')})}
+                      value={payerInfo.bankAddress}
+                      onChange={e => setPayerInfo({...payerInfo, bankAddress: e.target.value})}
                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="routing">Routing (9 Digits)</Label>
+                      <Input 
+                        id="routing" 
+                        placeholder="000000000" 
+                        maxLength={9} 
+                        required 
+                        value={payerInfo.routingNumber}
+                        onChange={e => setPayerInfo({...payerInfo, routingNumber: e.target.value.replace(/\D/g, '')})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="account">Account Number</Label>
+                      <Input 
+                        id="account" 
+                        type="password"
+                        placeholder="Account Number" 
+                        required 
+                        value={payerInfo.accountNumber}
+                        onChange={e => setPayerInfo({...payerInfo, accountNumber: e.target.value.replace(/\D/g, '')})}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-2">
+                      <PenTool className="w-4 h-4 text-accent" /> Digital Signature
+                    </Label>
+                    <Button type="button" variant="ghost" size="sm" className="h-7 text-[10px]" onClick={clearSignature}>
+                      <RotateCcw className="w-3 h-3 mr-1" /> Reset
+                    </Button>
+                  </div>
+                  <div className="border-2 border-dashed border-slate-200 rounded-lg overflow-hidden bg-slate-50 relative h-32">
+                    <canvas
+                      ref={canvasRef}
+                      width={400}
+                      height={128}
+                      onMouseDown={startDrawing}
+                      onMouseUp={stopDrawing}
+                      onMouseMove={draw}
+                      onMouseLeave={stopDrawing}
+                      onTouchStart={startDrawing}
+                      onTouchEnd={stopDrawing}
+                      onTouchMove={draw}
+                      className="w-full h-full cursor-crosshair touch-none"
+                    />
+                    {!hasSigned && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-300 text-xs uppercase font-bold tracking-widest">
+                        Sign Here
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

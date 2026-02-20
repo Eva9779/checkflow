@@ -1,3 +1,4 @@
+
 'use client';
 
 import { use, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, ShieldCheck, Download, CheckCircle2 } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function PrintCheckPage({ params }: { params: Promise<{ id: string }> }) {
@@ -178,6 +179,15 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
               <div className="relative mt-2">
+                {transaction.signatureData ? (
+                  <div className="h-12 w-full flex justify-center items-end pb-1 overflow-hidden">
+                    <img 
+                      src={transaction.signatureData} 
+                      alt="Signature" 
+                      className="max-h-full object-contain filter grayscale contrast-125"
+                    />
+                  </div>
+                ) : null}
                 <div className="border-b-[1px] border-slate-400 w-full mb-1"></div>
                 <p className="text-[8px] text-center uppercase font-bold text-slate-400">Authorized Signature - Verified Electronic Document</p>
               </div>
