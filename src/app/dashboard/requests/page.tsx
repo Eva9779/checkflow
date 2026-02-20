@@ -7,11 +7,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Download, Share2, Copy, CheckCircle2, Loader2 } from 'lucide-react';
+import { QrCode, Share2, Copy, CheckCircle2, Loader2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import Image from 'next/image';
 
 export default function RequestPaymentPage() {
   const router = useRouter();
@@ -21,6 +21,7 @@ export default function RequestPaymentPage() {
   
   const [loading, setLoading] = useState(false);
   const [requestUrl, setRequestUrl] = useState('');
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
 
   const [formData, setFormData] = useState({
     payerName: '',
@@ -47,7 +48,9 @@ export default function RequestPaymentPage() {
     const txRef = collection(db, 'users', user.uid, 'transactions');
     addDoc(txRef, txData)
       .then((docRef) => {
-        setRequestUrl(`https://echeckflow.com/pay/req_${docRef.id}`);
+        const url = `https://echeckflow.com/pay/req_${docRef.id}`;
+        setRequestUrl(url);
+        setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`);
         toast({ title: "Payment Request Created" });
       })
       .catch((error) => {
@@ -59,7 +62,7 @@ export default function RequestPaymentPage() {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(requestUrl);
-    toast({ title: "Copied!" });
+    toast({ title: "Copied Link!" });
   };
 
   return (
@@ -68,7 +71,7 @@ export default function RequestPaymentPage() {
         <div className="p-2 bg-accent/10 rounded-lg"><Download className="w-6 h-6 text-accent" /></div>
         <div>
           <h1 className="text-2xl font-headline font-bold">Request Payment</h1>
-          <p className="text-muted-foreground">Generate an e-check request for your clients.</p>
+          <p className="text-muted-foreground">Generate a secure QR code for your clients to pay via e-check.</p>
         </div>
       </div>
 
@@ -78,17 +81,32 @@ export default function RequestPaymentPage() {
             <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-10 h-10 text-accent" />
             </div>
-            <CardTitle className="text-2xl">Request Generated</CardTitle>
-            <CardDescription>Share this link with {formData.payerName} to get paid.</CardDescription>
+            <CardTitle className="text-2xl text-primary font-bold">Request Ready</CardTitle>
+            <CardDescription>Show this QR code to {formData.payerName} or share the link.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 text-center">
-            <div className="bg-white p-4 rounded-lg border flex items-center justify-between gap-4">
-              <span className="text-sm font-mono truncate text-muted-foreground">{requestUrl}</span>
-              <Button size="sm" variant="ghost" onClick={copyToClipboard}><Copy className="w-4 h-4 mr-2" /> Copy</Button>
+            <div className="flex justify-center bg-white p-6 rounded-2xl shadow-sm inline-block mx-auto border border-accent/20">
+              {qrCodeUrl && (
+                <div className="relative w-[200px] h-[200px]">
+                  <img 
+                    src={qrCodeUrl} 
+                    alt="Payment Request QR Code" 
+                    width={200}
+                    height={200}
+                    className="mx-auto"
+                  />
+                </div>
+              )}
             </div>
+            
+            <div className="bg-white p-3 rounded-lg border flex items-center justify-between gap-4 max-w-sm mx-auto">
+              <span className="text-xs font-mono truncate text-muted-foreground">{requestUrl}</span>
+              <Button size="sm" variant="ghost" className="h-8" onClick={copyToClipboard}><Copy className="w-3 h-3 mr-2" /> Copy</Button>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button className="bg-accent"><Share2 className="w-4 h-4 mr-2" /> Share via Email</Button>
-              <Button variant="outline" onClick={() => setRequestUrl('')}>Create Another</Button>
+              <Button className="bg-accent hover:bg-accent/90"><Share2 className="w-4 h-4 mr-2" /> Share via Email</Button>
+              <Button variant="outline" onClick={() => { setRequestUrl(''); setQrCodeUrl(''); }}>Create Another</Button>
             </div>
             <Button variant="link" className="text-muted-foreground" onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
           </CardContent>
@@ -123,8 +141,13 @@ export default function RequestPaymentPage() {
             </Card>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-              <Button type="submit" className="bg-primary min-w-[180px]" disabled={loading}>
-                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Generate Link'}
+              <Button type="submit" className="bg-primary min-w-[200px]" disabled={loading}>
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : (
+                  <>
+                    <QrCode className="w-4 h-4 mr-2" />
+                    Generate QR Code
+                  </>
+                )}
               </Button>
             </div>
           </div>
