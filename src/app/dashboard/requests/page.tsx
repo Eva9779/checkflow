@@ -12,7 +12,6 @@ import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import Image from 'next/image';
 
 export default function RequestPaymentPage() {
   const router = useRouter();
@@ -44,11 +43,11 @@ export default function RequestPaymentPage() {
     setLoading(true);
 
     const txData = {
-      type: 'requested',
+      type: 'requested' as const,
       recipientName: formData.payerName,
       amount: amountNum,
       memo: `Request: ${formData.purpose}`,
-      status: 'pending',
+      status: 'pending' as const,
       date: new Date().toISOString().split('T')[0],
       createdAt: serverTimestamp()
     };
@@ -56,10 +55,10 @@ export default function RequestPaymentPage() {
     const txRef = collection(db, 'users', user.uid, 'transactions');
     addDoc(txRef, txData)
       .then((docRef) => {
-        // Generate a link based on the current origin for testing/live usage
         const origin = window.location.origin;
         const url = `${origin}/pay/req_${docRef.id}`;
         setRequestUrl(url);
+        // Using a standard img tag for generated QR codes is often more stable for dynamic URLs
         setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`);
         toast({ title: "Payment Request Created" });
       })
@@ -102,12 +101,12 @@ export default function RequestPaymentPage() {
           <CardContent className="space-y-6 text-center">
             <div className="flex justify-center bg-white p-6 rounded-2xl shadow-sm inline-block mx-auto border border-accent/20">
               {qrCodeUrl && (
-                <div className="relative w-[200px] h-[200px]">
-                  <Image 
+                <div className="relative w-[200px] h-[200px] flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
                     src={qrCodeUrl} 
                     alt="Payment Request QR Code" 
-                    fill
-                    className="object-contain"
+                    className="w-full h-full object-contain"
                   />
                 </div>
               )}
