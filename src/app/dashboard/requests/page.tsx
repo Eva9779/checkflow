@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -6,12 +7,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QrCode, Share2, Copy, CheckCircle2, Loader2, Download, ArrowLeft } from 'lucide-react';
+import { QrCode, Share2, Copy, CheckCircle2, Loader2, Download, ArrowLeft, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import Link from 'next/link';
 
 export default function RequestPaymentPage() {
   const router = useRouter();
@@ -42,7 +44,7 @@ export default function RequestPaymentPage() {
 
     setLoading(true);
 
-    // Generate ID client-side for instant QR display
+    // 1. Generate ID client-side for immediate URL display
     const transactionsRef = collection(db, 'users', user.uid, 'transactions');
     const newTxRef = doc(transactionsRef);
     const txId = newTxRef.id;
@@ -51,21 +53,22 @@ export default function RequestPaymentPage() {
       type: 'requested' as const,
       recipientName: formData.payerName,
       amount: amountNum,
-      memo: `Request: ${formData.purpose}`,
+      memo: formData.purpose,
       status: 'pending' as const,
       date: new Date().toISOString().split('T')[0],
       createdAt: serverTimestamp(),
       dueDate: formData.dueDate || null
     };
 
-    // Construct URLs immediately
+    // 2. Construct URLs precisely
     const origin = window.location.origin;
+    // We explicitly include the userId 'u' to allow the public page to find the specific user's transaction
     const url = `${origin}/pay/${txId}?u=${user.uid}`;
     
-    // Start the write in background (Optimistic UI)
+    // 3. Perform background write
     setDoc(newTxRef, txData)
       .then(() => {
-        toast({ title: "Payment Request Created" });
+        toast({ title: "Payment Request Live" });
       })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -76,7 +79,7 @@ export default function RequestPaymentPage() {
         errorEmitter.emit('permission-error', permissionError);
       });
 
-    // Update UI instantly
+    // 4. Update UI instantly (Optimistic)
     setRequestUrl(url);
     setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`);
     setLoading(false);
@@ -99,13 +102,13 @@ export default function RequestPaymentPage() {
       </div>
 
       {requestUrl ? (
-        <Card className="border-accent/30 bg-accent/5 overflow-hidden">
+        <Card className="border-accent/30 bg-accent/5 overflow-hidden shadow-lg">
           <CardHeader className="text-center pb-2">
             <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-10 h-10 text-accent" />
             </div>
-            <CardTitle className="text-2xl text-primary font-bold">Request Ready</CardTitle>
-            <CardDescription>Show this QR code to {formData.payerName} or share the link.</CardDescription>
+            <CardTitle className="text-2xl text-primary font-bold">Secure Request Ready</CardTitle>
+            <CardDescription>Show this QR code to {formData.payerName} to authorize payment.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 text-center">
             <div className="flex justify-center bg-white p-6 rounded-2xl shadow-sm inline-block mx-auto border border-accent/20">
@@ -120,39 +123,47 @@ export default function RequestPaymentPage() {
               )}
             </div>
             
-            <div className="bg-white p-3 rounded-lg border flex items-center justify-between gap-4 max-w-sm mx-auto">
-              <span className="text-xs font-mono truncate text-muted-foreground">{requestUrl}</span>
-              <Button size="sm" variant="ghost" className="h-8" onClick={copyToClipboard}><Copy className="w-3 h-3 mr-2" /> Copy</Button>
+            <div className="bg-white p-3 rounded-lg border flex items-center justify-between gap-4 max-w-sm mx-auto shadow-sm">
+              <span className="text-[10px] font-mono truncate text-muted-foreground flex-1 text-left">{requestUrl}</span>
+              <Button size="sm" variant="ghost" className="h-8 px-2" onClick={copyToClipboard}>
+                <Copy className="w-3.5 h-3.5 mr-2" /> 
+                <span className="text-xs">Copy</span>
+              </Button>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button className="bg-accent hover:bg-accent/90"><Share2 className="w-4 h-4 mr-2" /> Share via Email</Button>
-              <Button variant="outline" onClick={() => { setRequestUrl(''); setQrCodeUrl(''); }}>Create Another</Button>
+              <Button className="bg-accent hover:bg-accent/90 shadow-sm" asChild>
+                <Link href={requestUrl} target="_blank">
+                  <ExternalLink className="w-4 h-4 mr-2" /> Preview Link
+                </Link>
+              </Button>
+              <Button variant="outline" className="shadow-sm" onClick={() => { setRequestUrl(''); setQrCodeUrl(''); }}>Create Another</Button>
             </div>
-            <Button variant="link" className="text-muted-foreground" onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
+            <Button variant="link" className="text-muted-foreground text-xs" onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
           </CardContent>
         </Card>
       ) : (
         <form onSubmit={handleSubmit}>
           <div className="grid gap-6">
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-sm overflow-hidden">
               <CardHeader className="border-b bg-secondary/30">
                 <CardTitle className="text-lg">Request Details</CardTitle>
+                <CardDescription>Legal details for the check collection.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="payerName">Payer Name</Label>
-                    <Input id="payerName" placeholder="Client name" required value={formData.payerName} onChange={e => setFormData({...formData, payerName: e.target.value})} />
+                    <Label htmlFor="payerName">Payer Name (Business or Individual)</Label>
+                    <Input id="payerName" placeholder="Client legal name" required value={formData.payerName} onChange={e => setFormData({...formData, payerName: e.target.value})} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Amount (USD)</Label>
-                    <Input id="amount" type="number" step="0.01" required value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+                    <Label htmlFor="amount">Amount Requested (USD)</Label>
+                    <Input id="amount" type="number" step="0.01" required placeholder="0.00" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="purpose">Purpose</Label>
-                  <Input id="purpose" placeholder="e.g. Invoice #203" required value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} />
+                  <Label htmlFor="purpose">Payment Memo / Purpose</Label>
+                  <Input id="purpose" placeholder="e.g. Consulting Services - Invoice #203" required value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="dueDate">Due Date (Optional)</Label>
@@ -162,11 +173,11 @@ export default function RequestPaymentPage() {
             </Card>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-              <Button type="submit" className="bg-primary min-w-[200px]" disabled={loading}>
+              <Button type="submit" className="bg-primary min-w-[220px] shadow-md" disabled={loading}>
                 {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : (
                   <>
                     <QrCode className="w-4 h-4 mr-2" />
-                    Generate QR Code
+                    Generate Secure QR Request
                   </>
                 )}
               </Button>
