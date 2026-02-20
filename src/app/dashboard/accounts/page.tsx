@@ -1,0 +1,191 @@
+'use client';
+
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Building2, Plus, ShieldCheck, Trash2, CheckCircle2, MoreVertical } from 'lucide-react';
+import { getStore, addAccountAction } from '@/lib/store';
+import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
+export default function BankAccountsPage() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const { accounts } = getStore();
+
+  const [newAccount, setNewAccount] = useState({
+    bankName: '',
+    routingNumber: '',
+    accountNumber: '',
+    confirmAccountNumber: ''
+  });
+
+  const handleAddAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (newAccount.accountNumber !== newAccount.confirmAccountNumber) {
+      toast({ title: "Mismatched Accounts", description: "Account numbers do not match.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    setTimeout(() => {
+      addAccountAction({
+        bankName: newAccount.bankName,
+        routingNumber: newAccount.routingNumber,
+        accountNumber: `****${newAccount.accountNumber.slice(-4)}`,
+        isDefault: accounts.length === 0
+      });
+      toast({ title: "Account Linked", description: `${newAccount.bankName} successfully connected.` });
+      setOpen(false);
+      setLoading(false);
+      setNewAccount({ bankName: '', routingNumber: '', accountNumber: '', confirmAccountNumber: '' });
+    }, 1200);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-headline font-bold">Bank Accounts</h1>
+          <p className="text-muted-foreground">Manage your connected U.S. bank accounts for e-check transfers.</p>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-accent hover:bg-accent/90">
+              <Plus className="w-4 h-4 mr-2" /> Link New Account
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <form onSubmit={handleAddAccount}>
+              <DialogHeader>
+                <DialogTitle>Connect U.S. Bank Account</DialogTitle>
+                <DialogDescription>
+                  Enter your account details securely. We use bank-level encryption.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bankName">Bank Name</Label>
+                  <Input 
+                    id="bankName" 
+                    placeholder="e.g. Chase, Bank of America" 
+                    required 
+                    value={newAccount.bankName}
+                    onChange={e => setNewAccount({...newAccount, bankName: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="routing">Routing Number (9 Digits)</Label>
+                  <Input 
+                    id="routing" 
+                    placeholder="XXXXXXXXX" 
+                    maxLength={9} 
+                    required 
+                    value={newAccount.routingNumber}
+                    onChange={e => setNewAccount({...newAccount, routingNumber: e.target.value.replace(/\D/g, '')})}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="account">Account Number</Label>
+                    <Input 
+                      id="account" 
+                      type="password"
+                      placeholder="Enter account number" 
+                      required 
+                      value={newAccount.accountNumber}
+                      onChange={e => setNewAccount({...newAccount, accountNumber: e.target.value.replace(/\D/g, '')})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmAccount">Confirm Account</Label>
+                    <Input 
+                      id="confirmAccount" 
+                      type="password"
+                      placeholder="Re-enter account number" 
+                      required 
+                      value={newAccount.confirmAccountNumber}
+                      onChange={e => setNewAccount({...newAccount, confirmAccountNumber: e.target.value.replace(/\D/g, '')})}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground bg-secondary/50 p-2 rounded">
+                  <ShieldCheck className="w-3 h-3 text-accent" />
+                  Your information is encrypted and will never be shared without your consent.
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={loading} className="bg-primary">
+                  {loading ? 'Connecting...' : 'Link Account'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {accounts.map(acc => (
+          <Card key={acc.id} className="border-none shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center text-primary">
+                  <Building2 className="w-6 h-6" />
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>Set as Default</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Remove Account</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <CardTitle className="mt-4">{acc.bankName}</CardTitle>
+              <CardDescription>U.S. Savings Account</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Account Number</span>
+                  <span className="font-mono font-medium">{acc.accountNumber}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Routing Number</span>
+                  <span className="font-mono font-medium">{acc.routingNumber}</span>
+                </div>
+                {acc.isDefault && (
+                  <div className="pt-2 flex items-center gap-1 text-xs text-accent font-bold uppercase tracking-wider">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Default Account
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-accent transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+          </Card>
+        ))}
+
+        {accounts.length === 0 && (
+          <Card className="border-dashed border-2 bg-transparent flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:bg-white/50 transition-colors" onClick={() => setOpen(true)}>
+            <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mb-4">
+              <Plus className="w-6 h-6 text-slate-500" />
+            </div>
+            <CardTitle className="text-lg">No Accounts Linked</CardTitle>
+            <CardDescription className="max-w-[200px] mt-2">Connect your first U.S. bank account to start transacting.</CardDescription>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
