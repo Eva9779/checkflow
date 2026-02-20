@@ -6,10 +6,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QrCode, Share2, Copy, CheckCircle2, Loader2, Download } from 'lucide-react';
+import { QrCode, Share2, Copy, CheckCircle2, Loader2, Download, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -42,6 +42,11 @@ export default function RequestPaymentPage() {
 
     setLoading(true);
 
+    // Generate ID client-side for instant QR display
+    const transactionsRef = collection(db, 'users', user.uid, 'transactions');
+    const newTxRef = doc(transactionsRef);
+    const txId = newTxRef.id;
+
     const txData = {
       type: 'requested' as const,
       recipientName: formData.payerName,
@@ -49,28 +54,32 @@ export default function RequestPaymentPage() {
       memo: `Request: ${formData.purpose}`,
       status: 'pending' as const,
       date: new Date().toISOString().split('T')[0],
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
+      dueDate: formData.dueDate || null
     };
 
-    const txRef = collection(db, 'users', user.uid, 'transactions');
-    addDoc(txRef, txData)
-      .then((docRef) => {
-        const origin = window.location.origin;
-        const url = `${origin}/pay/req_${docRef.id}`;
-        setRequestUrl(url);
-        // Using a standard img tag for generated QR codes is often more stable for dynamic URLs
-        setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`);
+    // Construct URLs immediately
+    const origin = window.location.origin;
+    const url = `${origin}/pay/${txId}?u=${user.uid}`;
+    
+    // Start the write in background (Optimistic UI)
+    setDoc(newTxRef, txData)
+      .then(() => {
         toast({ title: "Payment Request Created" });
       })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
-          path: txRef.path,
+          path: newTxRef.path,
           operation: 'create',
           requestResourceData: txData
         });
         errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => setLoading(false));
+      });
+
+    // Update UI instantly
+    setRequestUrl(url);
+    setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`);
+    setLoading(false);
   };
 
   const copyToClipboard = () => {
@@ -102,7 +111,6 @@ export default function RequestPaymentPage() {
             <div className="flex justify-center bg-white p-6 rounded-2xl shadow-sm inline-block mx-auto border border-accent/20">
               {qrCodeUrl && (
                 <div className="relative w-[200px] h-[200px] flex items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
                     src={qrCodeUrl} 
                     alt="Payment Request QR Code" 
