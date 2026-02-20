@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QrCode, Share2, Copy, CheckCircle2, Loader2, Download, ArrowLeft, ExternalLink } from 'lucide-react';
+import { QrCode, Share2, Copy, CheckCircle2, Loader2, Download, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -49,22 +49,22 @@ export default function RequestPaymentPage() {
     const newTxRef = doc(transactionsRef);
     const txId = newTxRef.id;
 
+    // 2. Construct URLs precisely - explicitly including u= parameter
+    const origin = window.location.origin;
+    const url = `${origin}/pay/${txId}?u=${user.uid}`;
+    
     const txData = {
       type: 'requested' as const,
-      recipientName: formData.payerName,
+      recipientName: user.displayName || 'Authorized Merchant',
       amount: amountNum,
       memo: formData.purpose,
       status: 'pending' as const,
       date: new Date().toISOString().split('T')[0],
       createdAt: serverTimestamp(),
-      dueDate: formData.dueDate || null
+      dueDate: formData.dueDate || null,
+      payerTargetName: formData.payerName // Who we are asking to pay
     };
 
-    // 2. Construct URLs precisely
-    const origin = window.location.origin;
-    // We explicitly include the userId 'u' to allow the public page to find the specific user's transaction
-    const url = `${origin}/pay/${txId}?u=${user.uid}`;
-    
     // 3. Perform background write
     setDoc(newTxRef, txData)
       .then(() => {
@@ -97,7 +97,7 @@ export default function RequestPaymentPage() {
         <div className="p-2 bg-accent/10 rounded-lg"><Download className="w-6 h-6 text-accent" /></div>
         <div>
           <h1 className="text-2xl font-headline font-bold">Request Payment</h1>
-          <p className="text-muted-foreground">Generate a secure QR code for your clients to pay via e-check.</p>
+          <p className="text-muted-foreground">Generate a secure QR code for clients to pay via e-check.</p>
         </div>
       </div>
 

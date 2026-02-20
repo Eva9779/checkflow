@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,6 +28,7 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
       (snapshot: DocumentSnapshot<T>) => {
         setData(snapshot.exists() ? { ...snapshot.data()!, id: snapshot.id } : null);
         setLoading(false);
+        setError(null);
       },
       async (serverError) => {
         const permissionError = new FirestorePermissionError({
@@ -35,6 +37,7 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
         });
         errorEmitter.emit('permission-error', permissionError);
         setError(serverError);
+        setData(null); // Explicitly clear data on error
         setLoading(false);
       }
     );
