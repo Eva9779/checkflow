@@ -7,8 +7,10 @@
       "type": "object",
       "properties": {
         "bankName": { "type": "string" },
+        "bankAddress": { "type": "string", "description": "Physical address of the bank branch" },
         "routingNumber": { "type": "string" },
         "accountNumber": { "type": "string", "description": "Masked account number" },
+        "fractionalRouting": { "type": "string", "description": "The fractional form of the routing number found on checks" },
         "isDefault": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -21,10 +23,13 @@
       "properties": {
         "type": { "type": "string", "enum": ["sent", "received", "requested"] },
         "recipientName": { "type": "string" },
+        "recipientAddress": { "type": "string", "description": "Payee address for physical check mailing" },
         "amount": { "type": "number" },
         "memo": { "type": "string" },
         "status": { "type": "string", "enum": ["completed", "pending", "failed"] },
-        "date": { "type": "string", "format": "date" }
+        "date": { "type": "string", "format": "date" },
+        "checkNumber": { "type": "string", "description": "Unique check identification number" },
+        "fromAccountId": { "type": "string" }
       },
       "required": ["type", "recipientName", "amount", "status", "date"]
     }

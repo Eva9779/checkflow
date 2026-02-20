@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Building2, Plus, ShieldCheck, CheckCircle2, MoreVertical, Loader2 } from 'lucide-react';
+import { Building2, Plus, ShieldCheck, CheckCircle2, MoreVertical, Loader2, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useFirestore, useUser, useCollection } from '@/firebase';
@@ -31,7 +31,9 @@ export default function BankAccountsPage() {
 
   const [newAccount, setNewAccount] = useState({
     bankName: '',
+    bankAddress: '',
     routingNumber: '',
+    fractionalRouting: '',
     accountNumber: '',
     confirmAccountNumber: ''
   });
@@ -49,7 +51,9 @@ export default function BankAccountsPage() {
 
     const accountData = {
       bankName: newAccount.bankName,
+      bankAddress: newAccount.bankAddress,
       routingNumber: newAccount.routingNumber,
+      fractionalRouting: newAccount.fractionalRouting,
       accountNumber: `****${newAccount.accountNumber.slice(-4)}`,
       isDefault: (accounts?.length || 0) === 0,
       createdAt: serverTimestamp()
@@ -60,7 +64,7 @@ export default function BankAccountsPage() {
       .then(() => {
         toast({ title: "Account Linked", description: `${newAccount.bankName} successfully connected.` });
         setOpen(false);
-        setNewAccount({ bankName: '', routingNumber: '', accountNumber: '', confirmAccountNumber: '' });
+        setNewAccount({ bankName: '', bankAddress: '', routingNumber: '', fractionalRouting: '', accountNumber: '', confirmAccountNumber: '' });
       })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -98,33 +102,57 @@ export default function BankAccountsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-headline font-bold">Bank Accounts</h1>
-          <p className="text-muted-foreground">Manage your connected U.S. bank accounts for e-check transfers.</p>
+          <p className="text-muted-foreground">Manage accounts for issuing and receiving e-checks.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button className="bg-accent hover:bg-accent/90">
-              <Plus className="w-4 h-4 mr-2" /> Link New Account
+              <Plus className="w-4 h-4 mr-2" /> Link Business Account
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[600px]">
             <form onSubmit={handleAddAccount}>
               <DialogHeader>
-                <DialogTitle>Connect U.S. Bank Account</DialogTitle>
+                <DialogTitle>Connect U.S. Business Account</DialogTitle>
                 <DialogDescription>
-                  Enter your account details securely. We use bank-level encryption.
+                  Details required for professional check formatting.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="bankName">Bank Name</Label>
+                    <Input 
+                      id="bankName" 
+                      placeholder="e.g. Chase, Wells Fargo" 
+                      required 
+                      value={newAccount.bankName}
+                      onChange={e => setNewAccount({...newAccount, bankName: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fractional">Fractional Routing (Optional)</Label>
+                    <Input 
+                      id="fractional" 
+                      placeholder="e.g. 1-2/345" 
+                      value={newAccount.fractionalRouting}
+                      onChange={e => setNewAccount({...newAccount, fractionalRouting: e.target.value})}
+                    />
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="bankName">Bank Name</Label>
+                  <Label htmlFor="bankAddress" className="flex items-center gap-2">
+                    <MapPin className="w-3 h-3" /> Bank Branch Address
+                  </Label>
                   <Input 
-                    id="bankName" 
-                    placeholder="e.g. Chase, Bank of America" 
-                    required 
-                    value={newAccount.bankName}
-                    onChange={e => setNewAccount({...newAccount, bankName: e.target.value})}
+                    id="bankAddress" 
+                    placeholder="City, State, Zip (Required for check face)" 
+                    value={newAccount.bankAddress}
+                    onChange={e => setNewAccount({...newAccount, bankAddress: e.target.value})}
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="routing">Routing Number (9 Digits)</Label>
                   <Input 
@@ -136,13 +164,14 @@ export default function BankAccountsPage() {
                     onChange={e => setNewAccount({...newAccount, routingNumber: e.target.value.replace(/\D/g, '')})}
                   />
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="account">Account Number</Label>
                     <Input 
                       id="account" 
                       type="password"
-                      placeholder="Enter account number" 
+                      placeholder="Account Number" 
                       required 
                       value={newAccount.accountNumber}
                       onChange={e => setNewAccount({...newAccount, accountNumber: e.target.value.replace(/\D/g, '')})}
@@ -153,7 +182,7 @@ export default function BankAccountsPage() {
                     <Input 
                       id="confirmAccount" 
                       type="password"
-                      placeholder="Re-enter account number" 
+                      placeholder="Confirm Account" 
                       required 
                       value={newAccount.confirmAccountNumber}
                       onChange={e => setNewAccount({...newAccount, confirmAccountNumber: e.target.value.replace(/\D/g, '')})}
@@ -162,7 +191,7 @@ export default function BankAccountsPage() {
                 </div>
                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground bg-secondary/50 p-2 rounded">
                   <ShieldCheck className="w-3 h-3 text-accent" />
-                  Your information is encrypted and will never be shared without your consent.
+                  Encryption is active. Bank details are stored securely in Firestore.
                 </div>
               </div>
               <DialogFooter>
@@ -200,16 +229,16 @@ export default function BankAccountsPage() {
                   </DropdownMenu>
                 </div>
                 <CardTitle className="mt-4">{acc.bankName}</CardTitle>
-                <CardDescription>U.S. Bank Account</CardDescription>
+                <CardDescription className="text-xs truncate">{acc.bankAddress || 'No branch address'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Account Number</span>
+                    <span className="text-muted-foreground">Account</span>
                     <span className="font-mono font-medium">{acc.accountNumber}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Routing Number</span>
+                    <span className="text-muted-foreground">Routing</span>
                     <span className="font-mono font-medium">{acc.routingNumber}</span>
                   </div>
                   {acc.isDefault && (
@@ -230,7 +259,7 @@ export default function BankAccountsPage() {
                 <Plus className="w-6 h-6 text-slate-500" />
               </div>
               <CardTitle className="text-lg">No Accounts Linked</CardTitle>
-              <CardDescription className="max-w-[200px] mt-2">Connect your first U.S. bank account to start transacting.</CardDescription>
+              <CardDescription className="max-w-[200px] mt-2">Connect a business account to start issuing e-checks.</CardDescription>
             </Card>
           )}
         </div>

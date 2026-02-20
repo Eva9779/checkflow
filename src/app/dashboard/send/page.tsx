@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, Sparkles, Send, Info, ShieldCheck, Loader2 } from 'lucide-react';
+import { Building2, Sparkles, Send, Info, ShieldCheck, Loader2, Hash, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { aiMemoAssistant } from '@/ai/flows/ai-memo-assistant';
 import { useFirestore, useUser, useCollection } from '@/firebase';
@@ -35,12 +35,14 @@ export default function SendPaymentPage() {
 
   const [formData, setFormData] = useState({
     recipientName: '',
+    recipientAddress: '',
     routingNumber: '',
     accountNumber: '',
     amount: '',
     purpose: '',
     memo: '',
-    fromAccount: ''
+    fromAccount: '',
+    checkNumber: Math.floor(1000 + Math.random() * 9000).toString()
   });
 
   const handleSuggestMemo = async () => {
@@ -83,18 +85,21 @@ export default function SendPaymentPage() {
     const txData = {
       type: 'sent',
       recipientName: formData.recipientName,
+      recipientAddress: formData.recipientAddress,
       amount: parseFloat(formData.amount),
       memo: formData.memo || formData.purpose,
       status: 'pending',
       date: new Date().toISOString().split('T')[0],
+      checkNumber: formData.checkNumber,
+      fromAccountId: formData.fromAccount,
       createdAt: serverTimestamp()
     };
 
     const txRef = collection(db, 'users', user.uid, 'transactions');
     addDoc(txRef, txData)
       .then(() => {
-        toast({ title: "E-Check Initiated", description: `Successfully sent $${formData.amount} to ${formData.recipientName}.` });
-        router.push('/dashboard');
+        toast({ title: "E-Check Generated", description: `Check #${formData.checkNumber} for $${formData.amount} is ready.` });
+        router.push('/dashboard/history');
       })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -114,38 +119,55 @@ export default function SendPaymentPage() {
           <Send className="w-6 h-6 text-accent" />
         </div>
         <div>
-          <h1 className="text-2xl font-headline font-bold">Initiate E-Check</h1>
-          <p className="text-muted-foreground">Send a secure digital check payment directly to a U.S. account.</p>
+          <h1 className="text-2xl font-headline font-bold">Issue New E-Check</h1>
+          <p className="text-muted-foreground">Generate a secure digital business check for print or ACH processing.</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6">
           <Card className="border-none shadow-sm">
-            <CardHeader className="border-b bg-secondary/30">
-              <CardTitle className="text-lg">Recipient Details</CardTitle>
-              <CardDescription>Enter the bank details of the person or business you are paying.</CardDescription>
+            <CardHeader className="border-b bg-secondary/30 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">Payee & Check Info</CardTitle>
+                <CardDescription>Legal details for the check face.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border shadow-sm">
+                <Hash className="w-4 h-4 text-accent" />
+                <Input 
+                  className="w-20 h-7 border-none shadow-none p-0 font-mono font-bold text-center" 
+                  value={formData.checkNumber} 
+                  onChange={e => setFormData({...formData, checkNumber: e.target.value})}
+                />
+              </div>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="recipientName">Recipient Name / Business</Label>
-                  <Input id="recipientName" placeholder="e.g. John Smith" required value={formData.recipientName} onChange={e => setFormData({...formData, recipientName: e.target.value})} />
+                  <Label htmlFor="recipientName">Payee Name / Business</Label>
+                  <Input id="recipientName" placeholder="Pay to the order of..." required value={formData.recipientName} onChange={e => setFormData({...formData, recipientName: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Payment Amount (USD)</Label>
+                  <Label htmlFor="amount">Amount (USD)</Label>
                   <Input id="amount" type="number" step="0.01" placeholder="0.00" required value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="recipientAddress" className="flex items-center gap-2">
+                  <MapPin className="w-3 h-3" /> Payee Address (Optional for mailing)
+                </Label>
+                <Input id="recipientAddress" placeholder="Street, City, State, Zip" value={formData.recipientAddress} onChange={e => setFormData({...formData, recipientAddress: e.target.value})} />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="routingNumber">U.S. Routing Number (9 Digits)</Label>
-                  <Input id="routingNumber" placeholder="XXXXXXXXX" maxLength={9} required value={formData.routingNumber} onChange={e => setFormData({...formData, routingNumber: e.target.value.replace(/\D/g, '')})} />
+                  <Label htmlFor="routingNumber">Recipient Routing Number</Label>
+                  <Input id="routingNumber" placeholder="9 Digits" maxLength={9} required value={formData.routingNumber} onChange={e => setFormData({...formData, routingNumber: e.target.value.replace(/\D/g, '')})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="accountNumber">Account Number</Label>
-                  <Input id="accountNumber" placeholder="Enter account number" required value={formData.accountNumber} onChange={e => setFormData({...formData, accountNumber: e.target.value.replace(/\D/g, '')})} />
+                  <Label htmlFor="accountNumber">Recipient Account Number</Label>
+                  <Input id="accountNumber" placeholder="Account Number" required value={formData.accountNumber} onChange={e => setFormData({...formData, accountNumber: e.target.value.replace(/\D/g, '')})} />
                 </div>
               </div>
             </CardContent>
@@ -153,19 +175,14 @@ export default function SendPaymentPage() {
 
           <Card className="border-none shadow-sm">
             <CardHeader className="border-b bg-secondary/30">
-              <CardTitle className="text-lg flex items-center gap-2">
-                Payment Context
-                <div className="px-2 py-0.5 bg-accent/10 rounded-full text-[10px] text-accent flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5" /> AI Enhanced
-                </div>
-              </CardTitle>
+              <CardTitle className="text-lg">Issuing Context</CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="fromAccount">Source Account</Label>
+                <Label htmlFor="fromAccount">Source Bank Account (Payer)</Label>
                 <Select value={formData.fromAccount} onValueChange={val => setFormData({...formData, fromAccount: val})}>
                   <SelectTrigger>
-                    <SelectValue placeholder={accLoading ? "Loading accounts..." : "Select a bank account"} />
+                    <SelectValue placeholder={accLoading ? "Loading accounts..." : "Select the account to pay from"} />
                   </SelectTrigger>
                   <SelectContent>
                     {accounts?.map(acc => (
@@ -174,43 +191,39 @@ export default function SendPaymentPage() {
                       </SelectItem>
                     ))}
                     {(!accounts || accounts.length === 0) && !accLoading && (
-                      <SelectItem disabled value="none">No accounts found</SelectItem>
+                      <SelectItem disabled value="none">No linked accounts found</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="purpose">Purpose of Payment</Label>
-                <Input id="purpose" placeholder="e.g. Monthly rent" required value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} />
+                <Label htmlFor="purpose">Internal Purpose</Label>
+                <Input id="purpose" placeholder="e.g. Q3 Vendor Payout" required value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} />
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="memo">Payment Memo (On Check)</Label>
+                  <Label htmlFor="memo">Check Memo (Printed on Face)</Label>
                   <Button type="button" variant="ghost" size="sm" className="h-8 text-xs text-accent flex gap-1" onClick={handleSuggestMemo} disabled={aiLoading}>
                     <Sparkles className="w-3 h-3" />
                     {aiLoading ? 'Generating...' : 'AI Suggest Memo'}
                   </Button>
                 </div>
-                <Textarea id="memo" placeholder="A clear description" className="resize-none h-20" value={formData.memo} onChange={e => setFormData({...formData, memo: e.target.value})} />
+                <Textarea id="memo" placeholder="Description to appear on the check" className="resize-none h-20" value={formData.memo} onChange={e => setFormData({...formData, memo: e.target.value})} />
               </div>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t py-4 px-6 flex items-start gap-3">
-              <Info className="w-5 h-5 text-slate-400 mt-0.5" />
-              <p className="text-xs text-slate-500">Ensure bank details are correct to avoid fees.</p>
-            </CardFooter>
           </Card>
 
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between pt-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <ShieldCheck className="w-4 h-4 text-green-500" />
-              Secured with Firestore Security Rules
+              Verified U.S. Business E-Check Format
             </div>
             <div className="flex gap-3 w-full md:w-auto">
-              <Button type="button" variant="outline" className="flex-1 md:flex-none" onClick={() => router.back()}>Cancel</Button>
-              <Button type="submit" className="flex-1 md:flex-none bg-primary min-w-[160px]" disabled={loading}>
-                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Send Payment'}
+              <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+              <Button type="submit" className="flex-1 md:flex-none bg-primary min-w-[180px]" disabled={loading || !formData.fromAccount}>
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Issue & View Check'}
               </Button>
             </div>
           </div>

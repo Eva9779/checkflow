@@ -1,9 +1,12 @@
+
 'use client';
 
 import { Transaction } from '@/lib/types';
 import { Card } from '@/components/ui/card';
-import { ArrowUpRight, ArrowDownLeft, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Clock, CheckCircle2, XCircle, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -30,7 +33,12 @@ export function TransactionList({ transactions }: TransactionListProps) {
               {tx.type === 'sent' ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownLeft className="w-6 h-6" />}
             </div>
             <div>
-              <p className="font-semibold text-foreground">{tx.recipientName}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-foreground">{tx.recipientName}</p>
+                {tx.checkNumber && (
+                  <span className="text-[10px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">#{tx.checkNumber}</span>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <p className="text-xs text-muted-foreground">{tx.date}</p>
                 <span className="text-xs text-muted-foreground/30">•</span>
@@ -38,26 +46,33 @@ export function TransactionList({ transactions }: TransactionListProps) {
               </div>
             </div>
           </div>
-          <div className="text-right">
-            <p className={cn(
-              "font-bold text-lg",
-              tx.type === 'sent' ? "text-foreground" : "text-accent"
-            )}>
-              {tx.type === 'sent' ? '-' : '+'}${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </p>
-            <div className="flex items-center justify-end gap-1 mt-1">
-              {tx.status === 'completed' && <CheckCircle2 className="w-3 h-3 text-green-500" />}
-              {tx.status === 'pending' && <Clock className="w-3 h-3 text-yellow-500" />}
-              {tx.status === 'failed' && <XCircle className="w-3 h-3 text-red-500" />}
-              <span className={cn(
-                "text-[10px] uppercase font-bold tracking-wider",
-                tx.status === 'completed' && "text-green-500",
-                tx.status === 'pending' && "text-yellow-500",
-                tx.status === 'failed' && "text-red-500"
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className={cn(
+                "font-bold text-lg",
+                tx.type === 'sent' ? "text-foreground" : "text-accent"
               )}>
-                {tx.status}
-              </span>
+                {tx.type === 'sent' ? '-' : '+'}${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+              <div className="flex items-center justify-end gap-1 mt-1">
+                {tx.status === 'completed' && <CheckCircle2 className="w-3 h-3 text-green-500" />}
+                {tx.status === 'pending' && <Clock className="w-3 h-3 text-yellow-500" />}
+                {tx.status === 'failed' && <XCircle className="w-3 h-3 text-red-500" />}
+                <span className={cn(
+                  "text-[10px] uppercase font-bold tracking-wider",
+                  tx.status === 'completed' && "text-green-500",
+                  tx.status === 'pending' && "text-yellow-500",
+                  tx.status === 'failed' && "text-red-500"
+                )}>
+                  {tx.status}
+                </span>
+              </div>
             </div>
+            <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent">
+              <Link href={`/dashboard/history/${tx.id}/print`}>
+                <Printer className="w-4 h-4" />
+              </Link>
+            </Button>
           </div>
         </Card>
       ))}

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -33,36 +34,6 @@
     --sidebar-border: 221 15% 55%;
     --sidebar-ring: 189 53% 53%;
   }
-
-  .dark {
-    --background: 221 30% 10%;
-    --foreground: 210 40% 98%;
-    --card: 221 30% 12%;
-    --card-foreground: 210 40% 98%;
-    --popover: 221 30% 12%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 221 23% 62%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 221 30% 18%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 221 30% 18%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 189 53% 53%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 221 30% 20%;
-    --input: 221 30% 20%;
-    --ring: 189 53% 53%;
-    --sidebar-background: 221 30% 10%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 189 53% 53%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 221 30% 18%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 221 30% 20%;
-    --sidebar-ring: 189 53% 53%;
-  }
 }
 
 @layer base {
@@ -72,4 +43,28 @@
   body {
     @apply bg-background text-foreground font-body;
   }
+}
+
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .check-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+
+.micr-font {
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 0.2em;
 }
