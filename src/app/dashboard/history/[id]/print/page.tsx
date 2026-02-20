@@ -1,14 +1,12 @@
-
 'use client';
 
-import { use } from 'react';
+import { use, useMemo } from 'react';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, ShieldCheck, Download } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2, ShieldCheck, Download, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useMemo } from 'react';
 
 export default function PrintCheckPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -30,14 +28,10 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   const { data: account, loading: accLoading } = useDoc<BankAccount>(accountRef);
 
-  // LOGIC FOR PRINTING
-  // 1. If type is 'sent', User is Payer, recipientName is Payee. Bank is accountRef.
-  // 2. If type is 'requested' and completed, payerName/payerBank info is Payer, User is Payee.
-  // 3. If type is 'received', external party is Payer, User is Payee.
-
   const isFulfilledRequest = transaction?.type === 'requested' && transaction?.status === 'completed';
   const isReceived = transaction?.type === 'received' || isFulfilledRequest;
 
+  // BANK VERIFICATION DATA
   const payerName = isFulfilledRequest 
     ? (transaction?.recipientName || 'External Payer') 
     : isReceived ? transaction?.recipientName : (user?.displayName || 'Business Account');
@@ -48,7 +42,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
     ? transaction?.payerBankAddress
     : isReceived 
     ? transaction?.recipientAddress 
-    : (account?.bankAddress || 'Authorized E-Check Issuer\nDigital Payment Service');
+    : (account?.bankAddress || 'Authorized E-Check Issuer');
 
   const bankName = isFulfilledRequest 
     ? transaction?.payerBankName 
@@ -91,15 +85,15 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
     let result = '';
     if (whole === 0) result = 'Zero';
     else {
-      if (whole >= 1000) {
-        result += convert_less_than_thousand(Math.floor(whole / 1000)) + 'Thousand ';
-        result += convert_less_than_thousand(whole % 1000);
-      } else {
-        result += convert_less_than_thousand(whole);
+      const thousands = Math.floor(whole / 1000);
+      const remaining = whole % 1000;
+      if (thousands > 0) {
+        result += convert_less_than_thousand(thousands) + 'Thousand ';
       }
+      result += convert_less_than_thousand(remaining);
     }
 
-    return `${result} and ${cents}/100 Dollars`;
+    return `*** ${result.trim()} and ${cents.toString().padStart(2, '0')}/100 Dollars ***`;
   };
 
   if (txLoading || (transaction?.fromAccountId && accLoading)) return (
@@ -117,93 +111,107 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
           <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </Button>
         <div className="flex gap-4">
-          <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="w-4 h-4 text-accent" />
-            {isReceived ? 'Official Check Ready for Deposit' : 'Verified U.S. Business E-Check Format'}
-          </div>
           <Button onClick={() => window.print()} className="bg-accent hover:bg-accent/90">
-            <Printer className="w-4 h-4 mr-2" /> Print & Save PDF
+            <Printer className="w-4 h-4 mr-2" /> Print for Bank Deposit
           </Button>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto bg-white shadow-2xl p-8 check-container border border-slate-200 rounded-sm overflow-hidden">
-        <div className="relative border-2 border-slate-300 p-8 min-h-[420px]">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-12">
-            <div>
-              <p className="font-bold text-lg uppercase tracking-wider">{payerName}</p>
-              <div className="text-sm text-slate-500 whitespace-pre-line max-w-[250px] mt-1">
-                {payerAddress || 'U.S. Authorized Payer'}
+      <div className="max-w-[8.5in] mx-auto bg-white shadow-2xl p-8 check-container border border-slate-200 rounded-sm overflow-hidden min-h-[11in]">
+        {/* The Check Body */}
+        <div className="relative border-[1px] border-slate-300 p-8 h-[3.5in] w-full bg-[#fdfdfd]">
+          {/* Top Line: Payer & Check Number */}
+          <div className="flex justify-between items-start mb-8">
+            <div className="space-y-0.5">
+              <p className="font-bold text-base uppercase tracking-tight">{payerName}</p>
+              <div className="text-[11px] text-slate-600 whitespace-pre-line leading-tight max-w-[200px]">
+                {payerAddress || 'Authorized Payer'}
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-black font-mono">#{transaction.checkNumber || '1001'}</p>
-              <div className="mt-4 flex flex-col items-end">
-                <span className="text-[10px] uppercase font-bold text-slate-400">Date</span>
-                <p className="border-b-2 border-slate-300 min-w-[150px] text-center font-mono py-1 font-bold">{transaction.date}</p>
+              <div className="flex flex-col items-end mb-2">
+                <p className="text-xl font-bold font-mono">{transaction.checkNumber || '1001'}</p>
+                {account?.fractionalRouting && (
+                  <p className="text-[9px] font-mono text-slate-400 mt-0.5">{account.fractionalRouting}</p>
+                )}
+              </div>
+              <div className="flex items-end gap-2">
+                <span className="text-[9px] uppercase font-bold text-slate-400 mb-1">Date:</span>
+                <p className="border-b-[1px] border-slate-400 min-w-[120px] text-center font-mono py-0.5 font-bold text-sm">{transaction.date}</p>
               </div>
             </div>
           </div>
 
           {/* Payee Line */}
-          <div className="flex items-end gap-4 mb-8">
-            <span className="text-sm font-bold uppercase min-w-[120px] pb-1">Pay to the Order of:</span>
-            <div className="flex-1 border-b-2 border-slate-300 pb-1 font-bold text-xl uppercase tracking-tight">
+          <div className="flex items-end gap-3 mb-6">
+            <span className="text-[10px] font-bold uppercase min-w-[110px] pb-1">Pay to the Order of:</span>
+            <div className="flex-1 border-b-[1px] border-slate-400 pb-0.5 font-bold text-lg uppercase tracking-tight">
               {payeeName}
             </div>
             <div className="relative flex items-center">
-              <span className="absolute left-2 font-bold text-lg">$</span>
-              <div className="border-2 border-slate-400 p-2 min-w-[160px] text-right font-mono text-2xl bg-slate-50 font-bold">
+              <span className="absolute left-2 font-bold text-sm">$</span>
+              <div className="border-[1.5px] border-slate-400 px-3 py-1.5 min-w-[140px] text-right font-mono text-xl bg-slate-50/50 font-bold">
                 {transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </div>
             </div>
           </div>
 
           {/* Amount in Words */}
-          <div className="border-b-2 border-slate-300 pb-1 mb-8 italic text-slate-800 font-medium">
-            {amountInWords(transaction.amount)}
+          <div className="flex items-end gap-2 mb-6">
+            <div className="flex-1 border-b-[1px] border-slate-400 pb-0.5 italic text-[13px] text-slate-900 font-semibold tracking-wide">
+              {amountInWords(transaction.amount)}
+            </div>
           </div>
 
-          {/* Bank & Memo */}
-          <div className="grid grid-cols-2 gap-8 mb-12">
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Bank Branch</p>
-              <p className="font-bold text-lg">{bankName}</p>
-              <p className="text-xs text-slate-500 font-medium">Federal Reserve Routing System Member</p>
+          {/* Bank Info & Memo */}
+          <div className="grid grid-cols-2 gap-10 mb-8">
+            <div className="pt-2">
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Bank Information</p>
+              <p className="font-bold text-sm leading-tight">{bankName}</p>
+              <p className="text-[9px] text-slate-500 font-medium">U.S. Federal Reserve Routing Member</p>
             </div>
-            <div className="flex items-end gap-3">
-              <span className="text-xs font-black uppercase text-slate-400 pb-1">Memo:</span>
-              <div className="flex-1 border-b-2 border-slate-300 pb-1 text-sm font-bold">
-                {transaction.memo}
+            <div className="flex flex-col justify-end">
+              <div className="flex items-end gap-2 mb-4">
+                <span className="text-[9px] font-bold uppercase text-slate-400 pb-1">Memo:</span>
+                <div className="flex-1 border-b-[1px] border-slate-400 pb-0.5 text-xs font-semibold">
+                  {transaction.memo}
+                </div>
+              </div>
+              <div className="relative mt-2">
+                <div className="border-b-[1px] border-slate-400 w-full mb-1"></div>
+                <p className="text-[8px] text-center uppercase font-bold text-slate-400">Authorized Signature - Verified Electronic Document</p>
               </div>
             </div>
           </div>
 
-          {/* Fractional Routing */}
-          {account?.fractionalRouting && (
-            <div className="absolute bottom-24 right-8 text-[10px] font-mono text-slate-400">
-              {account.fractionalRouting}
-            </div>
-          )}
-
-          {/* MICR Line */}
-          <div className="absolute bottom-8 left-0 w-full flex justify-center micr-font text-2xl tracking-[0.4em] font-medium opacity-90">
-             c {routingNumber} c {accountNumber.replace('****', '0000')} d {transaction.checkNumber || '1001'}
+          {/* MICR Line (The most critical part for ATM/Bank OCR) */}
+          <div className="absolute bottom-6 left-0 w-full flex justify-center micr-line text-2xl tracking-[0.25em] font-medium text-black">
+             ⑆{routingNumber}⑆ {accountNumber.replace('****', '0000')}⑈ {transaction.checkNumber || '1001'}
           </div>
 
-          {/* Watermark/Security */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none rotate-[-30deg]">
-             <span className="text-8xl font-black uppercase tracking-tighter">E-CheckFlow Verified</span>
+          {/* Security Features Overlay */}
+          <div className="absolute top-4 right-4 text-[7px] text-slate-300 font-mono border border-slate-100 p-1 select-none pointer-events-none">
+            MICROPRINT SECURITY • MP
           </div>
         </div>
 
-        <div className="mt-12 no-print text-center text-[10px] text-muted-foreground border-t border-dashed pt-6 space-y-2">
-          <p>THIS IS A LEGALLY BINDING ELECTRONIC CHECK. PRINT ON CHECK STOCK OR PLAIN PAPER FOR MOBILE DEPOSIT.</p>
-          <div className="flex justify-center gap-4">
-             <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Secure Record</span>
-             <span className="flex items-center gap-1"><Download className="w-3 h-3" /> Digital Copy</span>
+        {/* Printing Instructions & Record */}
+        <div className="mt-20 no-print">
+          <div className="bg-slate-50 border-[1px] border-dashed border-slate-200 p-6 rounded-lg">
+            <h3 className="text-sm font-bold flex items-center gap-2 mb-4">
+              <ShieldCheck className="w-4 h-4 text-accent" /> Deposit Instructions
+            </h3>
+            <ul className="text-xs space-y-2 text-slate-600 list-disc pl-4">
+              <li>Print this check on standard 8.5" x 11" white paper or check stock.</li>
+              <li>Use high-quality black ink for best OCR recognition at ATMs and Mobile Apps.</li>
+              <li>This document is a legally valid U.S. Business E-Check as defined by Check-21 regulations.</li>
+              <li>For Mobile Deposit: Lay the printed check on a flat, dark surface in good lighting.</li>
+            </ul>
           </div>
+        </div>
+        
+        <div className="mt-auto pt-20 text-center opacity-30 select-none print-only">
+          <p className="text-[10px] font-mono">--- DOCUMENT CONTAINS SECURITY FEATURES TO PREVENT ALTERATION ---</p>
         </div>
       </div>
     </div>
