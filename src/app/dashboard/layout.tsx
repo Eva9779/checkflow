@@ -1,8 +1,45 @@
+
+'use client';
+
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { LayoutDashboard, Send, Download, History, Building2, UserCircle, LogOut, Bell } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
+import { useAuth, useUser } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { Button } from '@/components/ui/button';
+import { useEffect } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useUser();
+  const auth = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    await signOut(auth);
+    router.push('/');
+  };
+
+  const getPageTitle = () => {
+    if (pathname === '/dashboard') return 'Overview';
+    if (pathname.includes('/send')) return 'Send E-Check';
+    if (pathname.includes('/requests')) return 'Request Payment';
+    if (pathname.includes('/history')) return 'Transaction History';
+    if (pathname.includes('/accounts')) return 'Bank Accounts';
+    return 'Dashboard';
+  };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50">Loading Dashboard...</div>;
+  if (!user) return null;
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
@@ -16,7 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <SidebarContent className="px-4">
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Dashboard">
+                <SidebarMenuButton asChild isActive={pathname === '/dashboard'} tooltip="Dashboard">
                   <Link href="/dashboard" className="flex items-center gap-3">
                     <LayoutDashboard className="w-5 h-5" />
                     <span className="font-medium">Dashboard</span>
@@ -24,7 +61,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Send Payment">
+                <SidebarMenuButton asChild isActive={pathname === '/dashboard/send'} tooltip="Send Payment">
                   <Link href="/dashboard/send" className="flex items-center gap-3">
                     <Send className="w-5 h-5" />
                     <span className="font-medium">Send E-Check</span>
@@ -32,7 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Request Payment">
+                <SidebarMenuButton asChild isActive={pathname === '/dashboard/requests'} tooltip="Request Payment">
                   <Link href="/dashboard/requests" className="flex items-center gap-3">
                     <Download className="w-5 h-5" />
                     <span className="font-medium">Request Payment</span>
@@ -40,7 +77,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Transaction History">
+                <SidebarMenuButton asChild isActive={pathname === '/dashboard/history'} tooltip="Transaction History">
                   <Link href="/dashboard/history" className="flex items-center gap-3">
                     <History className="w-5 h-5" />
                     <span className="font-medium">History</span>
@@ -48,7 +85,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Bank Accounts">
+                <SidebarMenuButton asChild isActive={pathname === '/dashboard/accounts'} tooltip="Bank Accounts">
                   <Link href="/dashboard/accounts" className="flex items-center gap-3">
                     <Building2 className="w-5 h-5" />
                     <span className="font-medium">Bank Accounts</span>
@@ -68,7 +105,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10">
                   <LogOut className="w-5 h-5" />
                   <span className="font-medium">Log Out</span>
                 </SidebarMenuButton>
@@ -81,7 +118,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <header className="h-16 flex items-center justify-between px-6 border-b bg-white sticky top-0 z-10 shadow-sm">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
-              <h1 className="text-lg font-headline font-semibold text-foreground">Overview</h1>
+              <h1 className="text-lg font-headline font-semibold text-foreground">{getPageTitle()}</h1>
             </div>
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" className="relative">
@@ -90,10 +127,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Button>
               <div className="flex items-center gap-3 ml-2 cursor-pointer group">
                 <div className="text-right hidden sm:block">
-                  <p className="text-sm font-semibold text-foreground leading-none">Alex Thompson</p>
-                  <p className="text-xs text-muted-foreground">Premium Account</p>
+                  <p className="text-sm font-semibold text-foreground leading-none">{user.displayName || user.email}</p>
+                  <p className="text-xs text-muted-foreground">Standard Account</p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center font-bold text-primary group-hover:ring-2 ring-accent transition-all">AT</div>
+                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center font-bold text-primary group-hover:ring-2 ring-accent transition-all">
+                  {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                </div>
               </div>
             </div>
           </header>

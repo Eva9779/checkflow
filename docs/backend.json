@@ -1,0 +1,45 @@
+
+{
+  "entities": {
+    "BankAccount": {
+      "title": "Bank Account",
+      "description": "A connected U.S. bank account for e-check transfers.",
+      "type": "object",
+      "properties": {
+        "bankName": { "type": "string" },
+        "routingNumber": { "type": "string" },
+        "accountNumber": { "type": "string", "description": "Masked account number" },
+        "isDefault": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["bankName", "routingNumber", "accountNumber"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "An e-check payment record.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["sent", "received", "requested"] },
+        "recipientName": { "type": "string" },
+        "amount": { "type": "number" },
+        "memo": { "type": "string" },
+        "status": { "type": "string", "enum": ["completed", "pending", "failed"] },
+        "date": { "type": "string", "format": "date" }
+      },
+      "required": ["type", "recipientName", "amount", "status", "date"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/users/{userId}/accounts/{accountId}": {
+      "schema": "BankAccount",
+      "description": "User-specific bank accounts"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "User-specific payment history"
+    }
+  }
+}

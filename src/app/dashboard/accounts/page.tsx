@@ -1,21 +1,33 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Building2, Plus, ShieldCheck, Trash2, CheckCircle2, MoreVertical } from 'lucide-react';
-import { getStore, addAccountAction } from '@/lib/store';
+import { Building2, Plus, ShieldCheck, CheckCircle2, MoreVertical, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useFirestore, useUser, useCollection } from '@/firebase';
+import { collection, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function BankAccountsPage() {
   const { toast } = useToast();
+  const db = useFirestore();
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const { accounts } = getStore();
+
+  const accountsQuery = useMemo(() => {
+    if (!db || !user) return null;
+    return collection(db, 'users', user.uid, 'accounts');
+  }, [db, user]);
+
+  const { data: accounts, loading: accountsLoading } = useCollection(accountsQuery);
 
   const [newAccount, setNewAccount] = useState({
     bankName: '',
@@ -26,6 +38,7 @@ export default function BankAccountsPage() {
 
   const handleAddAccount = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!db || !user) return;
     setLoading(true);
 
     if (newAccount.accountNumber !== newAccount.confirmAccountNumber) {
@@ -34,18 +47,50 @@ export default function BankAccountsPage() {
       return;
     }
 
-    setTimeout(() => {
-      addAccountAction({
-        bankName: newAccount.bankName,
-        routingNumber: newAccount.routingNumber,
-        accountNumber: `****${newAccount.accountNumber.slice(-4)}`,
-        isDefault: accounts.length === 0
+    const accountData = {
+      bankName: newAccount.bankName,
+      routingNumber: newAccount.routingNumber,
+      accountNumber: `****${newAccount.accountNumber.slice(-4)}`,
+      isDefault: (accounts?.length || 0) === 0,
+      createdAt: serverTimestamp()
+    };
+
+    const accountsRef = collection(db, 'users', user.uid, 'accounts');
+    addDoc(accountsRef, accountData)
+      .then(() => {
+        toast({ title: "Account Linked", description: `${newAccount.bankName} successfully connected.` });
+        setOpen(false);
+        setNewAccount({ bankName: '', routingNumber: '', accountNumber: '', confirmAccountNumber: '' });
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: accountsRef.path,
+          operation: 'create',
+          requestResourceData: accountData
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => setLoading(false));
+  };
+
+  const handleDeleteAccount = (id: string) => {
+    if (!db || !user) return;
+    const accountRef = doc(db, 'users', user.uid, 'accounts', id);
+    deleteDoc(accountRef).catch(async () => {
+      const permissionError = new FirestorePermissionError({
+        path: accountRef.path,
+        operation: 'delete'
       });
-      toast({ title: "Account Linked", description: `${newAccount.bankName} successfully connected.` });
-      setOpen(false);
-      setLoading(false);
-      setNewAccount({ bankName: '', routingNumber: '', accountNumber: '', confirmAccountNumber: '' });
-    }, 1200);
+      errorEmitter.emit('permission-error', permissionError);
+    });
+  };
+
+  const handleSetDefault = (id: string) => {
+    if (!db || !user || !accounts) return;
+    accounts.forEach(acc => {
+      const ref = doc(db, 'users', user.uid, 'accounts', acc.id);
+      updateDoc(ref, { isDefault: acc.id === id });
+    });
   };
 
   return (
@@ -131,61 +176,65 @@ export default function BankAccountsPage() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accounts.map(acc => (
-          <Card key={acc.id} className="border-none shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start">
-                <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center text-primary">
-                  <Building2 className="w-6 h-6" />
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Set as Default</DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">Remove Account</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <CardTitle className="mt-4">{acc.bankName}</CardTitle>
-              <CardDescription>U.S. Savings Account</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Account Number</span>
-                  <span className="font-mono font-medium">{acc.accountNumber}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Routing Number</span>
-                  <span className="font-mono font-medium">{acc.routingNumber}</span>
-                </div>
-                {acc.isDefault && (
-                  <div className="pt-2 flex items-center gap-1 text-xs text-accent font-bold uppercase tracking-wider">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Default Account
+      {accountsLoading ? (
+        <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-accent" /></div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {accounts?.map(acc => (
+            <Card key={acc.id} className="border-none shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center text-primary">
+                    <Building2 className="w-6 h-6" />
                   </div>
-                )}
-              </div>
-            </CardContent>
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-accent transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-          </Card>
-        ))}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleSetDefault(acc.id)}>Set as Default</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteAccount(acc.id)}>Remove Account</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <CardTitle className="mt-4">{acc.bankName}</CardTitle>
+                <CardDescription>U.S. Bank Account</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Account Number</span>
+                    <span className="font-mono font-medium">{acc.accountNumber}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Routing Number</span>
+                    <span className="font-mono font-medium">{acc.routingNumber}</span>
+                  </div>
+                  {acc.isDefault && (
+                    <div className="pt-2 flex items-center gap-1 text-xs text-accent font-bold uppercase tracking-wider">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Default Account
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <div className="absolute bottom-0 left-0 w-full h-1 bg-accent transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+            </Card>
+          ))}
 
-        {accounts.length === 0 && (
-          <Card className="border-dashed border-2 bg-transparent flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:bg-white/50 transition-colors" onClick={() => setOpen(true)}>
-            <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mb-4">
-              <Plus className="w-6 h-6 text-slate-500" />
-            </div>
-            <CardTitle className="text-lg">No Accounts Linked</CardTitle>
-            <CardDescription className="max-w-[200px] mt-2">Connect your first U.S. bank account to start transacting.</CardDescription>
-          </Card>
-        )}
-      </div>
+          {(!accounts || accounts.length === 0) && (
+            <Card className="border-dashed border-2 bg-transparent flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:bg-white/50 transition-colors" onClick={() => setOpen(true)}>
+              <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mb-4">
+                <Plus className="w-6 h-6 text-slate-500" />
+              </div>
+              <CardTitle className="text-lg">No Accounts Linked</CardTitle>
+              <CardDescription className="max-w-[200px] mt-2">Connect your first U.S. bank account to start transacting.</CardDescription>
+            </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 }

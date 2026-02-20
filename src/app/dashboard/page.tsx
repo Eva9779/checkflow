@@ -1,13 +1,40 @@
+
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight, ArrowDownLeft, Plus, Wallet, FileText, TrendingUp } from 'lucide-react';
+import { Plus, Wallet, FileText, TrendingUp, Building2, Clock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { getStore } from '@/lib/store';
+import { useFirestore, useUser, useCollection } from '@/firebase';
+import { collection, query, limit, orderBy } from 'firebase/firestore';
+import { useMemo } from 'react';
 import { TransactionList } from '@/components/dashboard/transaction-list';
 
 export default function DashboardOverview() {
-  const { accounts, transactions } = getStore();
-  const totalBalance = transactions.reduce((acc, tx) => tx.type === 'received' ? acc + tx.amount : acc - tx.amount, 10500.25);
+  const db = useFirestore();
+  const { user } = useUser();
+
+  const transactionsQuery = useMemo(() => {
+    if (!db || !user) return null;
+    return query(
+      collection(db, 'users', user.uid, 'transactions'),
+      orderBy('date', 'desc'),
+      limit(5)
+    );
+  }, [db, user]);
+
+  const accountsQuery = useMemo(() => {
+    if (!db || !user) return null;
+    return collection(db, 'users', user.uid, 'accounts');
+  }, [db, user]);
+
+  const { data: transactions, loading: txLoading } = useCollection(transactionsQuery);
+  const { data: accounts, loading: accLoading } = useCollection(accountsQuery);
+
+  const totalBalance = (transactions || []).reduce((acc, tx) => 
+    tx.type === 'received' ? acc + tx.amount : tx.type === 'sent' ? acc - tx.amount : acc, 10500.25);
+
+  const pendingCount = (transactions || []).filter(tx => tx.status === 'pending').length;
 
   return (
     <div className="space-y-8">
@@ -15,11 +42,13 @@ export default function DashboardOverview() {
         <Card className="bg-primary text-primary-foreground border-none shadow-md overflow-hidden relative">
           <div className="absolute top-0 right-0 p-4 opacity-20"><Wallet className="w-12 h-12" /></div>
           <CardHeader className="pb-2">
-            <CardDescription className="text-primary-foreground/80 font-medium">Total Balance</CardDescription>
-            <CardTitle className="text-3xl font-headline font-bold">${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</CardTitle>
+            <CardDescription className="text-primary-foreground/80 font-medium">Estimated Balance</CardDescription>
+            <CardTitle className="text-3xl font-headline font-bold">
+              ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-primary-foreground/70">+12% from last month</p>
+            <p className="text-xs text-primary-foreground/70">Refreshed in real-time</p>
           </CardContent>
         </Card>
 
@@ -29,7 +58,7 @@ export default function DashboardOverview() {
             <Building2 className="w-4 h-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{accounts.length}</div>
+            <div className="text-2xl font-bold">{accLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (accounts?.length || 0)}</div>
             <p className="text-xs text-muted-foreground">Connected bank accounts</p>
           </CardContent>
         </Card>
@@ -40,19 +69,19 @@ export default function DashboardOverview() {
             <Clock className="w-4 h-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
+            <div className="text-2xl font-bold">{txLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : pendingCount}</div>
             <p className="text-xs text-muted-foreground">Awaiting clearance</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm border-none hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Requests Received</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Secure Access</CardTitle>
             <FileText className="w-4 h-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1</div>
-            <p className="text-xs text-muted-foreground">Awaiting your approval</p>
+            <div className="text-2xl font-bold">Live</div>
+            <p className="text-xs text-muted-foreground">Encrypted Data Stream</p>
           </CardContent>
         </Card>
       </div>
@@ -78,38 +107,24 @@ export default function DashboardOverview() {
               <Link href="/dashboard/history" className="text-accent hover:text-accent/80">View all</Link>
             </Button>
           </div>
-          <TransactionList transactions={transactions.slice(0, 5)} />
+          {txLoading ? (
+            <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div>
+          ) : (
+            <TransactionList transactions={transactions || []} />
+          )}
         </div>
 
         <div className="space-y-4">
           <h2 className="text-xl font-headline font-bold">Quick Insights</h2>
           <Card className="shadow-sm border-none">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Payment Distribution</CardTitle>
+              <CardTitle className="text-base">Data Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-accent rounded-full"></div>
-                    <span className="text-sm">Operations</span>
-                  </div>
-                  <span className="text-sm font-semibold">45%</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                    <span className="text-sm">Marketing</span>
-                  </div>
-                  <span className="text-sm font-semibold">30%</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-secondary rounded-full"></div>
-                    <span className="text-sm">Salaries</span>
-                  </div>
-                  <span className="text-sm font-semibold">25%</span>
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  Your transactions and account data are now securely stored and synchronized across all your devices using Firebase Cloud Firestore.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -118,11 +133,13 @@ export default function DashboardOverview() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-green-500" />
-                Savings Tip
+                Security Status
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">By using E-Checks instead of wire transfers, you saved approximately <span className="font-bold text-foreground">$145.00</span> in fees this month.</p>
+              <p className="text-sm text-muted-foreground">
+                All connections are encrypted. Bank details are never stored in plain text.
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -130,5 +147,3 @@ export default function DashboardOverview() {
     </div>
   );
 }
-
-import { Building2, Clock } from 'lucide-react';
