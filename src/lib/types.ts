@@ -22,4 +22,9 @@ export interface Transaction {
   checkNumber?: string;
   fromAccountId?: string;
   createdAt: any;
+  // Fulfilling a request
+  payerBankName?: string;
+  payerRoutingNumber?: string;
+  payerAccountNumber?: string;
+  payerBankAddress?: string;
 }

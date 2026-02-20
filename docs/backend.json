@@ -29,7 +29,11 @@
         "status": { "type": "string", "enum": ["completed", "pending", "failed"] },
         "date": { "type": "string", "format": "date" },
         "checkNumber": { "type": "string", "description": "Unique check identification number" },
-        "fromAccountId": { "type": "string" }
+        "fromAccountId": { "type": "string" },
+        "payerBankName": { "type": "string" },
+        "payerRoutingNumber": { "type": "string" },
+        "payerAccountNumber": { "type": "string" },
+        "payerBankAddress": { "type": "string" }
       },
       "required": ["type", "recipientName", "amount", "status", "date"]
     }
