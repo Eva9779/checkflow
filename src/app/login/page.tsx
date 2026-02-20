@@ -8,15 +8,26 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useUser } from '@/firebase';
-import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from 'firebase/auth';
-import { ShieldCheck } from 'lucide-react';
+import { 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  updateProfile
+} from 'firebase/auth';
+import { ShieldCheck, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
   const { user, loading } = useUser();
+  const { toast } = useToast();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
@@ -30,27 +41,58 @@ export default function LoginPage() {
     setAuthLoading(true);
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch (error) {
-      console.error('Login error', error);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: error.message || "Could not sign in with Google.",
+      });
     } finally {
       setAuthLoading(false);
     }
   };
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth) return;
     setAuthLoading(true);
+    
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      console.error('Login error', error);
+      if (isSignUp) {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        if (displayName) {
+          await updateProfile(userCredential.user, { displayName });
+        }
+        toast({
+          title: "Account Created",
+          description: "Welcome to E-CheckFlow!",
+        });
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+        toast({
+          title: "Welcome Back",
+          description: "Successfully signed in.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: isSignUp ? "Sign Up Failed" : "Login Failed",
+        description: error.message || "Please check your credentials.",
+      });
     } finally {
       setAuthLoading(false);
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <Loader2 className="w-10 h-10 animate-spin text-accent mb-4" />
+        <p className="text-muted-foreground font-medium">Initializing secure session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -59,23 +101,70 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center text-white font-bold text-xl">EC</div>
           </div>
-          <CardTitle className="text-2xl font-headline font-bold">Welcome Back</CardTitle>
-          <CardDescription>Securely access your E-CheckFlow dashboard</CardDescription>
+          <CardTitle className="text-2xl font-headline font-bold">
+            {isSignUp ? 'Create Account' : 'Welcome Back'}
+          </CardTitle>
+          <CardDescription>
+            {isSignUp ? 'Join E-CheckFlow for secure payments' : 'Securely access your E-CheckFlow dashboard'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleEmailLogin} className="space-y-4">
+          <form onSubmit={handleEmailAuth} className="space-y-4">
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="displayName">Full Name</Label>
+                <Input 
+                  id="displayName" 
+                  placeholder="John Doe" 
+                  value={displayName} 
+                  onChange={e => setDisplayName(e.target.value)} 
+                  required={isSignUp}
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="alex@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="alex@example.com" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                required 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+              <Input 
+                id="password" 
+                type="password" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                required 
+              />
             </div>
             <Button type="submit" className="w-full bg-primary" disabled={authLoading}>
-              {authLoading ? 'Signing in...' : 'Sign In'}
+              {authLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                </>
+              ) : (
+                isSignUp ? 'Sign Up' : 'Sign In'
+              )}
             </Button>
           </form>
+
+          <div className="text-center mt-4">
+            <Button 
+              variant="link" 
+              className="text-sm text-accent" 
+              onClick={() => setIsSignUp(!isSignUp)}
+            >
+              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+            </Button>
+          </div>
+
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t"></span></div>
             <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground">Or continue with</span></div>
