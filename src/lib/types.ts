@@ -14,6 +14,8 @@ export interface Transaction {
   type: 'sent';
   recipientName: string;
   recipientAddress?: string;
+  recipientRouting?: string; // Added for ACH
+  recipientAccount?: string; // Added for ACH (Masked)
   amount: number;
   memo: string;
   status: 'completed' | 'pending' | 'failed';
