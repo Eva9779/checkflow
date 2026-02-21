@@ -76,15 +76,9 @@ export default function SendPaymentPage() {
     e.preventDefault();
     if (!db || !user) return;
     
-    // Validation
     const amountNum = parseFloat(formData.amount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      toast({ title: "Invalid Amount", description: "Please enter a valid payout amount.", variant: "destructive" });
-      return;
-    }
-
-    if (deliveryMethod === 'print' && !formData.fromAccount) {
-      toast({ title: "Account Required", description: "Please select a source account to print from.", variant: "destructive" });
+      toast({ title: "Invalid Amount", variant: "destructive" });
       return;
     }
 
@@ -92,18 +86,17 @@ export default function SendPaymentPage() {
     let stripeTxId = null;
 
     try {
-      // 1. Process Stripe ACH if selected
       if (deliveryMethod === 'stripe') {
         const stripeResult = await initiateStripeACHPayout({
           amount: amountNum,
           currency: 'usd',
-          description: formData.memo || formData.purpose
+          description: `TO: ${formData.recipientName} - ${formData.memo || formData.purpose}`
         });
 
         if (!stripeResult.success) {
           toast({ 
-            title: "Stripe Authorization Failed", 
-            description: stripeResult.error || "The bank transfer could not be initiated.", 
+            title: "Stripe Payment Failed", 
+            description: stripeResult.error, 
             variant: "destructive" 
           });
           setLoading(false);
@@ -112,7 +105,6 @@ export default function SendPaymentPage() {
         stripeTxId = stripeResult.id;
       }
 
-      // 2. Record Transaction in Database
       const txData = {
         type: 'sent',
         recipientName: formData.recipientName,
@@ -122,7 +114,7 @@ export default function SendPaymentPage() {
         status: deliveryMethod === 'stripe' ? 'completed' : 'pending',
         date: new Date().toISOString().split('T')[0],
         checkNumber: deliveryMethod === 'print' ? formData.checkNumber : null,
-        fromAccountId: deliveryMethod === 'print' ? formData.fromAccount : 'stripe-vault',
+        fromAccountId: deliveryMethod === 'print' ? formData.fromAccount : 'stripe-balance',
         deliveryMethod,
         stripeTransferId: stripeTxId,
         createdAt: serverTimestamp()
@@ -130,7 +122,6 @@ export default function SendPaymentPage() {
 
       const txRef = collection(db, 'users', user.uid, 'transactions');
       
-      // We don't await this so the UI feels fast
       addDoc(txRef, txData).catch(async () => {
         const permissionError = new FirestorePermissionError({
           path: txRef.path,
@@ -141,20 +132,13 @@ export default function SendPaymentPage() {
       });
 
       toast({ 
-        title: deliveryMethod === 'stripe' ? "Live ACH Authorized" : "Check Generated", 
-        description: deliveryMethod === 'stripe' 
-          ? `Real-world bank transfer for $${formData.amount} initiated.`
-          : `Check #${formData.checkNumber} is ready for bank deposit.` 
+        title: "Payout Successful", 
+        description: deliveryMethod === 'stripe' ? "Live ACH initiated." : "Check generated." 
       });
       
       router.push('/dashboard/history');
     } catch (err: any) {
-      console.error(err);
-      toast({ 
-        title: "System Error", 
-        description: "An unexpected error occurred. Please try again.", 
-        variant: "destructive" 
-      });
+      toast({ title: "System Error", description: "Could not finalize payout.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -193,8 +177,8 @@ export default function SendPaymentPage() {
                         <ReceiptText className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="font-bold text-sm">Professional E-Check</p>
-                        <p className="text-[10px] text-muted-foreground">Manual or Mobile Deposit</p>
+                        <p className="font-bold text-sm">Printable E-Check</p>
+                        <p className="text-[10px] text-muted-foreground">Manual Source Account</p>
                       </div>
                     </div>
                   </Label>
@@ -211,7 +195,7 @@ export default function SendPaymentPage() {
                       </div>
                       <div>
                         <p className="font-bold text-sm">Live ACH Transfer</p>
-                        <p className="text-[10px] text-muted-foreground">Direct Bank Payout</p>
+                        <p className="text-[10px] text-muted-foreground">From Stripe Balance</p>
                       </div>
                     </div>
                   </Label>
@@ -219,27 +203,15 @@ export default function SendPaymentPage() {
               </RadioGroup>
             </div>
 
-            <CardHeader className="border-b flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">Recipient Information</CardTitle>
-                <CardDescription>Legal name and amount for the payout.</CardDescription>
-              </div>
-              {deliveryMethod === 'print' && (
-                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border shadow-sm">
-                  <Hash className="w-3 h-3 text-accent" />
-                  <Input 
-                    className="w-20 h-7 border-none shadow-none p-0 font-mono font-bold text-center text-sm" 
-                    value={formData.checkNumber} 
-                    onChange={e => setFormData({...formData, checkNumber: e.target.value})}
-                  />
-                </div>
-              )}
+            <CardHeader className="border-b">
+              <CardTitle className="text-lg">Recipient Information</CardTitle>
+              <CardDescription>Enter the legal name and payout amount.</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="recipientName">Recipient Name</Label>
-                  <Input id="recipientName" placeholder="Business or Individual" required value={formData.recipientName} onChange={e => setFormData({...formData, recipientName: e.target.value})} />
+                  <Input id="recipientName" placeholder="Payee Name" required value={formData.recipientName} onChange={e => setFormData({...formData, recipientName: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="amount">Amount (USD)</Label>
@@ -248,12 +220,12 @@ export default function SendPaymentPage() {
               </div>
 
               {deliveryMethod === 'stripe' && (
-                <div className="flex items-start gap-3 bg-secondary/20 p-4 rounded-xl border border-secondary">
-                  <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                  <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-foreground">Stripe Payout Policy</p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Funds will be sent to the <strong>primary bank account</strong> already verified in your Stripe Dashboard.
+                    <p className="text-xs font-bold text-blue-900">Stripe Balance Payout</p>
+                    <p className="text-[11px] text-blue-800 leading-relaxed">
+                      Funds will be withdrawn from your **Stripe Balance** and sent to the accounts verified in your Stripe Dashboard.
                     </p>
                   </div>
                 </div>
@@ -265,7 +237,7 @@ export default function SendPaymentPage() {
             <Card className="border-none shadow-md">
               <CardHeader className="border-b bg-secondary/30">
                 <CardTitle className="text-lg">Financial Source</CardTitle>
-                <CardDescription>Choose the account to debit for this check.</CardDescription>
+                <CardDescription>Required to generate the check's MICR line.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2">
@@ -281,7 +253,7 @@ export default function SendPaymentPage() {
                         </SelectItem>
                       ))}
                       {(!accounts || accounts.length === 0) && !accLoading && (
-                        <SelectItem disabled value="none">No accounts linked. Please add one in Bank Accounts.</SelectItem>
+                        <SelectItem disabled value="none">No accounts linked.</SelectItem>
                       )}
                     </SelectContent>
                   </Select>
@@ -293,56 +265,32 @@ export default function SendPaymentPage() {
           <Card className="border-none shadow-md">
             <CardHeader className="border-b bg-secondary/30">
               <CardTitle className="text-lg">Memo Details</CardTitle>
-              <CardDescription>Add a professional note for your records.</CardDescription>
+              <CardDescription>Professional note for the recipient.</CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="purpose">Payout Purpose</Label>
-                  <Input id="purpose" placeholder="e.g., Consulting Fees, Monthly Rent" value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} />
+            <CardContent className="pt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="purpose">Payout Purpose</Label>
+                <Input id="purpose" placeholder="e.g., Consulting Fees" value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="memo">Check Memo</Label>
+                  <Button type="button" variant="ghost" size="sm" className="h-8 text-xs text-accent font-bold" onClick={handleSuggestMemo} disabled={aiLoading}>
+                    <Sparkles className="w-3 h-3 mr-1" /> AI Suggest
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="memo" className="flex items-center gap-2">Check Memo</Label>
-                    <Button type="button" variant="ghost" size="sm" className="h-8 text-[10px] text-accent font-bold uppercase tracking-wider flex gap-1" onClick={handleSuggestMemo} disabled={aiLoading}>
-                      <Sparkles className="w-3 h-3" />
-                      {aiLoading ? 'Thinking...' : 'AI Memo Assist'}
-                    </Button>
-                  </div>
-                  <Textarea id="memo" placeholder="Internal tracking memo" className="resize-none h-24 text-sm" value={formData.memo} onChange={e => setFormData({...formData, memo: e.target.value})} />
-                </div>
+                <Textarea id="memo" placeholder="Note on check" className="h-20" value={formData.memo} onChange={e => setFormData({...formData, memo: e.target.value})} />
               </div>
             </CardContent>
           </Card>
 
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between pt-4">
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground bg-green-50/80 px-4 py-3 rounded-xl border border-green-100/50 shadow-sm">
-              <ShieldCheck className="w-4 h-4 text-green-600 shrink-0" />
-              <span className="text-green-900 font-semibold tracking-tight uppercase">
-                {deliveryMethod === 'stripe' ? 'Secure Live Transfer' : 'Bank-Compliant MICR'}
-              </span>
-            </div>
-            <div className="flex gap-3 w-full md:w-auto">
-              <Button type="button" variant="outline" className="h-12 px-6" onClick={() => router.back()}>Cancel</Button>
-              <Button type="submit" className="flex-1 md:flex-none h-12 bg-primary min-w-[240px] font-bold text-base shadow-lg hover:shadow-primary/20" disabled={loading || (deliveryMethod === 'print' && !formData.fromAccount)}>
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Processing...
-                  </>
-                ) : (
-                  deliveryMethod === 'stripe' ? 'Send ACH Payment' : 'Issue Professional Check'
-                )}
-              </Button>
-            </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+            <Button type="submit" className="min-w-[200px]" disabled={loading || (deliveryMethod === 'print' && !formData.fromAccount)}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+              {deliveryMethod === 'stripe' ? 'Send ACH Payment' : 'Issue Check'}
+            </Button>
           </div>
-          
-          {deliveryMethod === 'stripe' && (
-            <div className="flex items-center gap-2 justify-center text-[10px] text-amber-600 font-bold uppercase tracking-widest animate-pulse">
-              <AlertCircle className="w-3 h-3" />
-              Production Mode Active
-            </div>
-          )}
         </div>
       </form>
     </div>
