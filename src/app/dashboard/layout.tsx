@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
@@ -33,6 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (pathname.includes('/send')) return 'Send Payout';
     if (pathname.includes('/history')) return 'Transaction History';
     if (pathname.includes('/accounts')) return 'Bank Accounts';
+    if (pathname.includes('/profile')) return 'My Profile';
     return 'Dashboard';
   };
 
@@ -88,8 +88,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <SidebarFooter className="p-4 border-t">
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="#" className="flex items-center gap-3">
+                <SidebarMenuButton asChild isActive={pathname === '/dashboard/profile'}>
+                  <Link href="/dashboard/profile" className="flex items-center gap-3">
                     <UserCircle className="w-5 h-5" />
                     <span className="font-medium">My Profile</span>
                   </Link>
@@ -116,7 +116,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full border-2 border-white"></span>
               </Button>
-              <div className="flex items-center gap-3 ml-2 cursor-pointer group">
+              <Link href="/dashboard/profile" className="flex items-center gap-3 ml-2 cursor-pointer group">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-foreground leading-none">{user.displayName || user.email}</p>
                   <p className="text-xs text-muted-foreground">Business Account</p>
@@ -124,7 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center font-bold text-primary group-hover:ring-2 ring-accent transition-all">
                   {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
                 </div>
-              </div>
+              </Link>
             </div>
           </header>
           <main className="p-6 md:p-8 flex-1 overflow-auto max-w-7xl mx-auto w-full">
