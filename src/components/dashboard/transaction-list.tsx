@@ -3,7 +3,7 @@
 
 import { Transaction } from '@/lib/types';
 import { Card } from '@/components/ui/card';
-import { ArrowUpRight, ArrowDownLeft, Clock, CheckCircle2, XCircle, Printer } from 'lucide-react';
+import { ArrowUpRight, Clock, CheckCircle2, XCircle, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
   if (transactions.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-xl border-dashed border-2 text-muted-foreground">
-        No transactions found.
+        No sent transactions found.
       </div>
     );
   }
@@ -26,11 +26,8 @@ export function TransactionList({ transactions }: TransactionListProps) {
       {transactions.map((tx) => (
         <Card key={tx.id} className="p-4 shadow-sm border-none hover:bg-secondary/20 transition-colors flex items-center justify-between group">
           <div className="flex items-center gap-4">
-            <div className={cn(
-              "w-12 h-12 rounded-full flex items-center justify-center transition-transform group-hover:scale-105",
-              tx.type === 'sent' ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
-            )}>
-              {tx.type === 'sent' ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownLeft className="w-6 h-6" />}
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-slate-50 text-slate-600 transition-transform group-hover:scale-105">
+              <ArrowUpRight className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -48,11 +45,8 @@ export function TransactionList({ transactions }: TransactionListProps) {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className={cn(
-                "font-bold text-lg",
-                tx.type === 'sent' ? "text-foreground" : "text-accent"
-              )}>
-                {tx.type === 'sent' ? '-' : '+'}${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              <p className="font-bold text-lg text-foreground">
+                -${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
               <div className="flex items-center justify-end gap-1 mt-1">
                 {tx.status === 'completed' && <CheckCircle2 className="w-3 h-3 text-green-500" />}

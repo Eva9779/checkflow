@@ -29,33 +29,13 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   const { data: account, loading: accLoading } = useDoc<BankAccount>(accountRef);
 
-  const isFulfilledRequest = transaction?.type === 'requested' && transaction?.status === 'completed';
-  const isReceived = transaction?.type === 'received' || isFulfilledRequest;
-
-  // BANK VERIFICATION DATA
-  const payerName = isFulfilledRequest 
-    ? (transaction?.recipientName || 'External Payer') 
-    : isReceived ? transaction?.recipientName : (user?.displayName || 'Business Account');
-    
-  const payeeName = isReceived ? (user?.displayName || user?.email || 'Valued Recipient') : transaction?.recipientName;
-  
-  const payerAddress = isFulfilledRequest
-    ? transaction?.payerBankAddress
-    : isReceived 
-    ? transaction?.recipientAddress 
-    : (account?.bankAddress || 'Authorized E-Check Issuer');
-
-  const bankName = isFulfilledRequest 
-    ? transaction?.payerBankName 
-    : (account?.bankName || 'Standard Bank Entity');
-
-  const routingNumber = isFulfilledRequest 
-    ? transaction?.payerRoutingNumber 
-    : (account?.routingNumber || '000000000');
-
-  const accountNumber = isFulfilledRequest 
-    ? transaction?.payerAccountNumber 
-    : (account?.accountNumber || '****0000');
+  // Since this is a SEND-ONLY app, we are always the payer
+  const payerName = user?.displayName || 'Authorized Business Entity';
+  const payeeName = transaction?.recipientName || 'Valued Recipient';
+  const payerAddress = account?.bankAddress || 'Authorized E-Check Issuer';
+  const bankName = account?.bankName || 'Financial Institution';
+  const routingNumber = account?.routingNumber || '000000000';
+  const accountNumber = account?.accountNumber || '****0000';
 
   const amountInWords = (num: number) => {
     const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
@@ -97,7 +77,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
     return `*** ${result.trim()} and ${cents.toString().padStart(2, '0')}/100 Dollars ***`;
   };
 
-  if (txLoading || (transaction?.fromAccountId && accLoading)) return (
+  if (txLoading || accLoading) return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="w-10 h-10 animate-spin text-accent" />
     </div>
@@ -119,14 +99,12 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
       </div>
 
       <div className="max-w-[8.5in] mx-auto bg-white shadow-2xl p-8 check-container border border-slate-200 rounded-sm overflow-hidden min-h-[11in]">
-        {/* The Check Body */}
         <div className="relative border-[1px] border-slate-300 p-8 h-[3.5in] w-full bg-[#fdfdfd]">
-          {/* Top Line: Payer & Check Number */}
           <div className="flex justify-between items-start mb-8">
             <div className="space-y-0.5">
               <p className="font-bold text-base uppercase tracking-tight">{payerName}</p>
               <div className="text-[11px] text-slate-600 whitespace-pre-line leading-tight max-w-[200px]">
-                {payerAddress || 'Authorized Payer'}
+                {payerAddress}
               </div>
             </div>
             <div className="text-right">
@@ -143,7 +121,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          {/* Payee Line */}
           <div className="flex items-end gap-3 mb-6">
             <span className="text-[10px] font-bold uppercase min-w-[110px] pb-1">Pay to the Order of:</span>
             <div className="flex-1 border-b-[1px] border-slate-400 pb-0.5 font-bold text-lg uppercase tracking-tight">
@@ -157,14 +134,12 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          {/* Amount in Words */}
           <div className="flex items-end gap-2 mb-6">
             <div className="flex-1 border-b-[1px] border-slate-400 pb-0.5 italic text-[13px] text-slate-900 font-semibold tracking-wide">
               {amountInWords(transaction.amount)}
             </div>
           </div>
 
-          {/* Bank Info & Memo */}
           <div className="grid grid-cols-2 gap-10 mb-8">
             <div className="pt-2">
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Bank Information</p>
@@ -179,49 +154,28 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
               <div className="relative mt-2">
-                {transaction.signatureData ? (
-                  <div className="h-12 w-full flex justify-center items-end pb-1 overflow-hidden">
-                    <img 
-                      src={transaction.signatureData} 
-                      alt="Signature" 
-                      className="max-h-full object-contain filter grayscale contrast-125"
-                    />
-                  </div>
-                ) : null}
                 <div className="border-b-[1px] border-slate-400 w-full mb-1"></div>
                 <p className="text-[8px] text-center uppercase font-bold text-slate-400">Authorized Signature - Verified Electronic Document</p>
               </div>
             </div>
           </div>
 
-          {/* MICR Line (The most critical part for ATM/Bank OCR) */}
           <div className="absolute bottom-6 left-0 w-full flex justify-center micr-line text-2xl tracking-[0.25em] font-medium text-black">
              ⑆{routingNumber}⑆ {accountNumber.replace('****', '0000')}⑈ {transaction.checkNumber || '1001'}
           </div>
-
-          {/* Security Features Overlay */}
-          <div className="absolute top-4 right-4 text-[7px] text-slate-300 font-mono border border-slate-100 p-1 select-none pointer-events-none">
-            MICROPRINT SECURITY • MP
-          </div>
         </div>
 
-        {/* Printing Instructions & Record */}
         <div className="mt-20 no-print">
           <div className="bg-slate-50 border-[1px] border-dashed border-slate-200 p-6 rounded-lg">
             <h3 className="text-sm font-bold flex items-center gap-2 mb-4">
-              <ShieldCheck className="w-4 h-4 text-accent" /> Deposit Instructions
+              <ShieldCheck className="w-4 h-4 text-accent" /> Security Notice
             </h3>
             <ul className="text-xs space-y-2 text-slate-600 list-disc pl-4">
-              <li>Print this check on standard 8.5" x 11" white paper or check stock.</li>
-              <li>Use high-quality black ink for best OCR recognition at ATMs and Mobile Apps.</li>
-              <li>This document is a legally valid U.S. Business E-Check as defined by Check-21 regulations.</li>
-              <li>For Mobile Deposit: Lay the printed check on a flat, dark surface in good lighting.</li>
+              <li>This document is a legally valid U.S. Business E-Check.</li>
+              <li>Print on standard white paper or check stock using high-quality black ink.</li>
+              <li>Use for mobile deposit or physical bank branch deposit.</li>
             </ul>
           </div>
-        </div>
-        
-        <div className="mt-auto pt-20 text-center opacity-30 select-none print-only">
-          <p className="text-[10px] font-mono">--- DOCUMENT CONTAINS SECURITY FEATURES TO PREVENT ALTERATION ---</p>
         </div>
       </div>
     </div>

@@ -3,10 +3,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Wallet, FileText, TrendingUp, Building2, Clock, Loader2, Send } from 'lucide-react';
+import { Plus, Wallet, FileText, TrendingUp, Building2, Clock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, limit, orderBy } from 'firebase/firestore';
+import { collection, query, limit, orderBy, where } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { TransactionList } from '@/components/dashboard/transaction-list';
 import { Transaction, BankAccount } from '@/lib/types';
@@ -19,6 +19,7 @@ export default function DashboardOverview() {
     if (!db || !user) return null;
     return query(
       collection(db, 'users', user.uid, 'transactions'),
+      where('type', '==', 'sent'),
       orderBy('date', 'desc'),
       limit(5)
     );
@@ -33,7 +34,6 @@ export default function DashboardOverview() {
   const { data: accounts, loading: accLoading } = useCollection<BankAccount>(accountsQuery as any);
 
   const totalSent = (transactions || [])
-    .filter(tx => tx.type === 'sent')
     .reduce((acc, tx) => acc + tx.amount, 0);
 
   const pendingCount = (transactions || []).filter(tx => tx.status === 'pending').length;
@@ -50,7 +50,7 @@ export default function DashboardOverview() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-primary-foreground/70">Historical sent payments</p>
+            <p className="text-xs text-primary-foreground/70">Recent sent payments</p>
           </CardContent>
         </Card>
 
@@ -72,18 +72,18 @@ export default function DashboardOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{txLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : pendingCount}</div>
-            <p className="text-xs text-muted-foreground">Awaiting bank clearance</p>
+            <p className="text-xs text-muted-foreground">Awaiting clearance</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm border-none hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Secure Access</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Data Security</CardTitle>
             <FileText className="w-4 h-4 text-accent" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">Encrypted</div>
-            <p className="text-xs text-muted-foreground">Bank-level data protection</p>
+            <p className="text-xs text-muted-foreground">Bank-level protection</p>
           </CardContent>
         </Card>
       </div>
@@ -118,11 +118,9 @@ export default function DashboardOverview() {
               <CardTitle className="text-base">Check Compliance</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  All issued checks are formatted according to U.S. Federal Reserve standards, including MICR-ready routing and account lines for ATM/Mobile deposit.
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                All issued checks are formatted according to U.S. Federal Reserve standards, including MICR-ready lines.
+              </p>
             </CardContent>
           </Card>
 
@@ -135,7 +133,7 @@ export default function DashboardOverview() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Outgoing data is encrypted with AES-256. Bank credentials for your linked accounts are never visible to recipients.
+                Outgoing data is encrypted with AES-256. Credentials are never visible to recipients.
               </p>
             </CardContent>
           </Card>
