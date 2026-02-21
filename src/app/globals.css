@@ -45,11 +45,16 @@
 }
 
 @media print {
+  @page {
+    size: letter;
+    margin: 0;
+  }
   body {
     background-color: white !important;
     color: black !important;
     padding: 0 !important;
     margin: 0 !important;
+    -webkit-print-color-adjust: exact;
   }
   .no-print {
     display: none !important;
@@ -60,7 +65,6 @@
     margin: 0 !important;
     padding: 0.5in !important;
     width: 100% !important;
-    height: 11in !important;
     background: white !important;
   }
   .print-page-break {
@@ -71,10 +75,12 @@
 .micr-line {
   font-family: 'Courier New', Courier, monospace;
   font-weight: 500;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.4em;
   text-transform: uppercase;
+  color: black;
 }
 
 .check-container {
   font-family: 'Inter', sans-serif;
+  color: black;
 }
