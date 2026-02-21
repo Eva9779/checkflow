@@ -19,6 +19,7 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
   useEffect(() => {
     if (!ref) {
       setLoading(false);
+      setData(null);
       return;
     }
 
@@ -26,18 +27,22 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
     const unsubscribe = onSnapshot(
       ref,
       (snapshot: DocumentSnapshot<T>) => {
-        setData(snapshot.exists() ? { ...snapshot.data()!, id: snapshot.id } : null);
+        if (snapshot.exists()) {
+          setData({ ...snapshot.data()!, id: snapshot.id });
+        } else {
+          setData(null);
+        }
         setLoading(false);
         setError(null);
       },
-      async (serverError) => {
+      (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: ref.path,
           operation: 'get',
         });
         errorEmitter.emit('permission-error', permissionError);
         setError(serverError);
-        setData(null); // Explicitly clear data on error
+        setData(null);
         setLoading(false);
       }
     );
