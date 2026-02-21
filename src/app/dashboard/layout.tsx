@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const getPageTitle = () => {
     if (pathname === '/dashboard') return 'Overview';
-    if (pathname.includes('/send')) return 'Send E-Check';
+    if (pathname.includes('/send')) return 'Send Payout';
     if (pathname.includes('/history')) return 'Transaction History';
     if (pathname.includes('/accounts')) return 'Bank Accounts';
     return 'Dashboard';
@@ -63,7 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <SidebarMenuButton asChild isActive={pathname === '/dashboard/send'} tooltip="Send Payment">
                   <Link href="/dashboard/send" className="flex items-center gap-3">
                     <Send className="w-5 h-5" />
-                    <span className="font-medium">Send E-Check</span>
+                    <span className="font-medium">Send Payout</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

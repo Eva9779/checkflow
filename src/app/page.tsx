@@ -25,14 +25,14 @@ export default function LandingPage() {
       <main className="flex-1">
         <section className="py-20 px-6 text-center max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-headline font-extrabold mb-6 text-foreground tracking-tight">
-            Seamless E-Check Payouts for <span className="text-accent">Modern Business</span>
+            Seamless Payouts for <span className="text-accent">Modern Business</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-            The most intuitive way to issue and send professional e-checks using U.S. bank accounts. Secure, fast, and compliant.
+            The most intuitive way to issue professional e-checks and ACH payouts. Secure, fast, and compliant.
           </p>
           <div className="flex justify-center">
             <Button size="lg" asChild className="h-14 px-10 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link href="/login">Start Sending E-Checks</Link>
+              <Link href="/login">Start Sending Payments</Link>
             </Button>
           </div>
         </section>
@@ -45,22 +45,22 @@ export default function LandingPage() {
                 <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-6">
                   <ArrowRightLeft className="w-8 h-8 text-accent" />
                 </div>
-                <h3 className="text-xl font-bold mb-4">Direct Bank Transfer</h3>
-                <p className="text-muted-foreground">Skip the card processing fees. Issue payments directly from your U.S. business bank accounts.</p>
+                <h3 className="text-xl font-bold mb-4">Direct Bank Payouts</h3>
+                <p className="text-muted-foreground">Skip the card processing fees. Issue payments directly from your business bank accounts via ACH or E-Check.</p>
               </div>
               <div className="flex flex-col items-center text-center">
                 <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-6">
                   <Clock className="w-8 h-8 text-accent" />
                 </div>
-                <h3 className="text-xl font-bold mb-4">Fast Settlements</h3>
-                <p className="text-muted-foreground">Standardized e-check processing ensures your payouts are tracked and settled reliably.</p>
+                <h3 className="text-xl font-bold mb-4">Reliable Settlements</h3>
+                <p className="text-muted-foreground">Standardized processing ensures your vendor and contractor payouts are tracked and settled reliably.</p>
               </div>
               <div className="flex flex-col items-center text-center">
                 <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-6">
                   <ShieldCheck className="w-8 h-8 text-accent" />
                 </div>
-                <h3 className="text-xl font-bold mb-4">Enterprise Security</h3>
-                <p className="text-muted-foreground">Bank-level encryption and secure account verification keep your financial data protected.</p>
+                <h3 className="text-xl font-bold mb-4">Live Stripe Security</h3>
+                <p className="text-muted-foreground">Bank-level encryption and secure ACH verification through the trusted Stripe network.</p>
               </div>
             </div>
           </div>
