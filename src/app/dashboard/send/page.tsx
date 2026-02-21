@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Building2, Sparkles, Send, Info, ShieldCheck, Loader2, Hash, MapPin, CreditCard, ReceiptText } from 'lucide-react';
+import { Building2, Sparkles, Send, Info, ShieldCheck, Loader2, Hash, MapPin, CreditCard, ReceiptText, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { aiMemoAssistant } from '@/ai/flows/ai-memo-assistant';
 import { useFirestore, useUser, useCollection } from '@/firebase';
@@ -76,34 +77,55 @@ export default function SendPaymentPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !user) return;
-    setLoading(true);
     
-    if (formData.routingNumber.length !== 9) {
-      toast({ title: "Invalid Routing Number", description: "Must be 9 digits.", variant: "destructive" });
-      setLoading(false);
+    // Basic Validation
+    if (!formData.fromAccount) {
+      toast({ title: "Account Required", description: "Please select a source account to debit.", variant: "destructive" });
       return;
     }
 
+    if (formData.routingNumber.length !== 9) {
+      toast({ title: "Invalid Routing Number", description: "U.S. Routing numbers must be exactly 9 digits.", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
     let stripeTxId = null;
 
+    // 1. Handle External Payment Gateway (Stripe)
     if (deliveryMethod === 'stripe') {
-      const stripeResult = await initiateStripeACHPayout({
-        amount: parseFloat(formData.amount),
-        currency: 'usd',
-        recipientRouting: formData.routingNumber,
-        recipientAccount: formData.accountNumber,
-        recipientName: formData.recipientName,
-        description: formData.memo || formData.purpose
-      });
+      try {
+        const stripeResult = await initiateStripeACHPayout({
+          amount: parseFloat(formData.amount),
+          currency: 'usd',
+          recipientRouting: formData.routingNumber,
+          recipientAccount: formData.accountNumber,
+          recipientName: formData.recipientName,
+          description: formData.memo || formData.purpose
+        });
 
-      if (!stripeResult.success) {
-        toast({ title: "Stripe Error", description: stripeResult.error, variant: "destructive" });
+        if (!stripeResult.success) {
+          toast({ 
+            title: "Payment Authorization Failed", 
+            description: stripeResult.error || "The bank transfer could not be initiated.", 
+            variant: "destructive" 
+          });
+          setLoading(false);
+          return;
+        }
+        stripeTxId = stripeResult.id;
+      } catch (err: any) {
+        toast({ 
+          title: "System Error", 
+          description: "Could not connect to the payment processing server. Please try again.", 
+          variant: "destructive" 
+        });
         setLoading(false);
         return;
       }
-      stripeTxId = stripeResult.id;
     }
 
+    // 2. Record Transaction in Database
     const txData = {
       type: 'sent',
       recipientName: formData.recipientName,
@@ -137,12 +159,12 @@ export default function SendPaymentPage() {
           requestResourceData: txData
         });
         errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => setLoading(false));
+        setLoading(false);
+      });
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6 pb-20">
       <div className="flex items-center gap-3">
         <div className="p-2 bg-accent/10 rounded-lg">
           <Send className="w-6 h-6 text-accent" />
@@ -167,7 +189,7 @@ export default function SendPaymentPage() {
                   <RadioGroupItem value="print" id="method-print" className="peer sr-only" />
                   <Label
                     htmlFor="method-print"
-                    className="flex items-center justify-between p-4 bg-white rounded-xl border-2 border-transparent cursor-pointer peer-data-[state=checked]:border-accent transition-all hover:bg-slate-50 shadow-sm"
+                    className="flex items-center justify-between p-4 bg-white rounded-xl border-2 border-transparent cursor-pointer peer-data-[state=checked]:border-accent transition-all hover:bg-slate-50 shadow-sm h-full"
                   >
                     <div className="flex items-center gap-3">
                       <ReceiptText className="w-5 h-5 text-accent" />
@@ -182,7 +204,7 @@ export default function SendPaymentPage() {
                   <RadioGroupItem value="stripe" id="method-stripe" className="peer sr-only" />
                   <Label
                     htmlFor="method-stripe"
-                    className="flex items-center justify-between p-4 bg-white rounded-xl border-2 border-transparent cursor-pointer peer-data-[state=checked]:border-accent transition-all hover:bg-slate-50 shadow-sm"
+                    className="flex items-center justify-between p-4 bg-white rounded-xl border-2 border-transparent cursor-pointer peer-data-[state=checked]:border-accent transition-all hover:bg-slate-50 shadow-sm h-full"
                   >
                     <div className="flex items-center gap-3">
                       <CreditCard className="w-5 h-5 text-accent" />
