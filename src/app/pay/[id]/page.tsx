@@ -24,7 +24,7 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
   const { id: rawId } = use(params);
   const resolvedSearchParams = use(searchParams);
   
-  const id = useMemo(() => String(rawId).trim(), [rawId]);
+  const id = useMemo(() => String(rawId || '').trim(), [rawId]);
   
   const userId = useMemo(() => {
     const u = resolvedSearchParams.u;
@@ -49,12 +49,12 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
 
+  // Construction of the document reference
   const txRef = useMemo(() => {
     if (!db || !userId || !id) return null;
     try {
       return doc(db, 'users', userId, 'transactions', id);
     } catch (e) {
-      console.error("Invalid path construction:", e);
       return null;
     }
   }, [db, userId, id]);
@@ -162,7 +162,8 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
       .finally(() => setSubmitting(false));
   };
 
-  if (loading || !db) {
+  // If loading or we don't have a path yet, show the loader
+  if (loading || !txRef) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center space-y-4">
@@ -173,11 +174,10 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
     );
   }
 
-  const isMissingUserId = !userId;
-  const isDocNotFound = !transaction && !loading && db;
   const isAccessDenied = error && error.message.toLowerCase().includes('permission');
+  const isDocNotFound = !transaction && !loading;
 
-  if (isMissingUserId || isDocNotFound || isAccessDenied) {
+  if (isDocNotFound || isAccessDenied) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
         <Card className="max-w-md w-full text-center p-8 shadow-xl border-none">
@@ -185,14 +185,12 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
             {isAccessDenied ? <Lock className="w-10 h-10 text-red-500" /> : <AlertCircle className="w-10 h-10 text-destructive" />}
           </div>
           <CardTitle className="text-2xl font-bold mb-3">
-            {isAccessDenied ? 'Access Denied' : isMissingUserId ? 'Invalid Link' : 'Request Not Found'}
+            {isAccessDenied ? 'Access Denied' : 'Request Not Found'}
           </CardTitle>
           <CardDescription className="mb-8 text-base leading-relaxed text-muted-foreground">
             {isAccessDenied 
               ? 'Security protocols are preventing access to this payment request.'
-              : isMissingUserId
-              ? 'This link is missing the required sender ID.'
-              : 'The requested payment document could not be found at the specified path.'}
+              : 'This payment request may have expired, been fulfilled, or the secure link is invalid.'}
           </CardDescription>
           
           <div className="space-y-3">
@@ -206,9 +204,9 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
           
           <div className="mt-8 p-4 bg-slate-100 rounded-lg text-left text-[10px] font-mono space-y-1">
             <p className="font-bold text-slate-500 uppercase">Diagnostics:</p>
-            <p className="truncate">Path: {txRef?.path || 'Invalid'}</p>
+            <p className="truncate">Path: {txRef.path}</p>
             <p>ID: {id}</p>
-            <p>UserID: {userId || 'Missing'}</p>
+            <p>UserID: {userId}</p>
             <p>Error: {error?.message || 'None'}</p>
           </div>
         </Card>

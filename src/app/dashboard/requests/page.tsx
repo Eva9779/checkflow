@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QrCode, Share2, Copy, CheckCircle2, Loader2, Download, ExternalLink } from 'lucide-react';
+import { QrCode, Copy, CheckCircle2, Loader2, Download, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -32,7 +32,7 @@ export default function RequestPaymentPage() {
     dueDate: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !user) return;
 
@@ -44,45 +44,45 @@ export default function RequestPaymentPage() {
 
     setLoading(true);
 
-    // 1. Generate ID client-side for immediate URL display
+    // 1. Generate ID client-side
     const transactionsRef = collection(db, 'users', user.uid, 'transactions');
     const newTxRef = doc(transactionsRef);
     const txId = newTxRef.id;
 
-    // 2. Construct URLs precisely - explicitly including u= parameter
+    // 2. Construct URLs
     const origin = window.location.origin;
     const url = `${origin}/pay/${txId}?u=${user.uid}`;
     
     const txData = {
       type: 'requested' as const,
-      recipientName: user.displayName || 'Authorized Merchant',
+      recipientName: user.displayName || user.email || 'Authorized Merchant',
       amount: amountNum,
       memo: formData.purpose,
       status: 'pending' as const,
       date: new Date().toISOString().split('T')[0],
       createdAt: serverTimestamp(),
       dueDate: formData.dueDate || null,
-      payerTargetName: formData.payerName // Who we are asking to pay
+      payerTargetName: formData.payerName
     };
 
-    // 3. Perform background write
-    setDoc(newTxRef, txData)
-      .then(() => {
-        toast({ title: "Payment Request Live" });
-      })
-      .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
-          path: newTxRef.path,
-          operation: 'create',
-          requestResourceData: txData
-        });
-        errorEmitter.emit('permission-error', permissionError);
+    try {
+      // 3. Wait for the write to COMPLETE before showing the link
+      await setDoc(newTxRef, txData);
+      
+      setRequestUrl(url);
+      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`);
+      toast({ title: "Payment Request Live" });
+    } catch (error) {
+      const permissionError = new FirestorePermissionError({
+        path: newTxRef.path,
+        operation: 'create',
+        requestResourceData: txData
       });
-
-    // 4. Update UI instantly (Optimistic)
-    setRequestUrl(url);
-    setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`);
-    setLoading(false);
+      errorEmitter.emit('permission-error', permissionError);
+      toast({ title: "Could not create request", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const copyToClipboard = () => {

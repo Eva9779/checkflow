@@ -24,6 +24,8 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
     }
 
     setLoading(true);
+    setError(null);
+
     const unsubscribe = onSnapshot(
       ref,
       (snapshot: DocumentSnapshot<T>) => {
@@ -48,7 +50,7 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
     );
 
     return () => unsubscribe();
-  }, [ref]);
+  }, [ref]); // Removed path string dependency to avoid unnecessary flickering
 
   return { data, loading, error };
 }
