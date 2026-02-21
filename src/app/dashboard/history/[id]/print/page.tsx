@@ -5,9 +5,8 @@ import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2, ShieldCheck, Square } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 
 export default function PrintCheckPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -192,10 +191,19 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
         {/* BACK OF CHECK - Compliance Endorsement Area */}
         <div className="bg-white shadow-2xl check-container border-[2px] border-black/10 rounded-sm overflow-hidden p-8 print:p-0 print-page-break">
           <div className="relative border-[1px] border-black h-[3.66in] w-full bg-[#fdfdfd] p-10 rounded-sm">
+            {/* Endorsement Instructions Section */}
             <div className="absolute top-10 right-10 w-[3in]">
               <div className="border-b-[2px] border-black w-full mb-1"></div>
-              <p className="text-[10px] text-center font-bold uppercase tracking-wider mb-8">Endorse Here</p>
+              <p className="text-[10px] text-center font-bold uppercase tracking-wider mb-4">Endorse Here</p>
               
+              {/* Mobile Deposit Checkbox */}
+              <div className="flex items-center justify-center gap-2 mb-8 bg-slate-50 p-2 rounded border border-dashed border-slate-300">
+                <Square className="w-5 h-5 text-black/20" />
+                <span className="text-[9px] font-bold uppercase tracking-tight text-black/60">
+                  Check here if mobile deposit
+                </span>
+              </div>
+
               <div className="space-y-4 opacity-10">
                 <div className="border-b-[1px] border-black w-full"></div>
                 <div className="border-b-[1px] border-black w-full"></div>
@@ -210,7 +218,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* Security Features */}
+            {/* Security Features Watermark */}
             <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none rotate-[-35deg]">
               <span className="text-6xl font-black uppercase tracking-[0.2em]">Security Document</span>
             </div>
@@ -223,7 +231,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* Mobile Deposit Warning */}
+            {/* Remote Deposit Only Marking */}
             <div className="absolute top-1/2 left-10 -translate-y-1/2 w-32 border border-black/20 p-2 rounded text-center opacity-40">
               <p className="text-[8px] font-bold uppercase leading-none">For Remote Deposit Only</p>
             </div>
