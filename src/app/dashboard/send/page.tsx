@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -98,9 +97,6 @@ export default function SendPaymentPage() {
         const stripeResult = await initiateStripeACHPayout({
           amount: parseFloat(formData.amount),
           currency: 'usd',
-          recipientRouting: formData.routingNumber,
-          recipientAccount: formData.accountNumber,
-          recipientName: formData.recipientName,
           description: formData.memo || formData.purpose
         });
 
@@ -134,7 +130,6 @@ export default function SendPaymentPage() {
 
       const txRef = collection(db, 'users', user.uid, 'transactions');
       
-      // Initiate background write
       addDoc(txRef, txData)
         .catch(async (error) => {
           const permissionError = new FirestorePermissionError({
@@ -148,7 +143,7 @@ export default function SendPaymentPage() {
       toast({ 
         title: deliveryMethod === 'stripe' ? "Live ACH Authorized" : "Check Generated", 
         description: deliveryMethod === 'stripe' 
-          ? `Real-world bank transfer for $${formData.amount} initiated successfully.`
+          ? `Real-world bank transfer for $${formData.amount} initiated.`
           : `Check #${formData.checkNumber} is ready for bank deposit.` 
       });
       
@@ -157,11 +152,10 @@ export default function SendPaymentPage() {
       console.error(err);
       toast({ 
         title: "System Error", 
-        description: "A critical error occurred during payout execution.", 
+        description: "An unexpected error occurred. Please try again.", 
         variant: "destructive" 
       });
-    } finally {
-      setTimeout(() => setLoading(false), 500);
+      setLoading(false);
     }
   };
 
@@ -216,7 +210,7 @@ export default function SendPaymentPage() {
                       </div>
                       <div>
                         <p className="font-bold text-sm">Live ACH Transfer</p>
-                        <p className="text-[10px] text-muted-foreground">Direct Real-World Deposit</p>
+                        <p className="text-[10px] text-muted-foreground">Direct Bank Payout</p>
                       </div>
                     </div>
                   </Label>
@@ -227,7 +221,7 @@ export default function SendPaymentPage() {
             <CardHeader className="border-b flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-lg">Recipient Information</CardTitle>
-                <CardDescription>Verified bank details for the payout destination.</CardDescription>
+                <CardDescription>Legal name and amount for the payout.</CardDescription>
               </div>
               {deliveryMethod === 'print' && (
                 <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border shadow-sm">
@@ -243,8 +237,8 @@ export default function SendPaymentPage() {
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="recipientName">Recipient Legal Name</Label>
-                  <Input id="recipientName" placeholder="Business or Individual Name" required value={formData.recipientName} onChange={e => setFormData({...formData, recipientName: e.target.value})} />
+                  <Label htmlFor="recipientName">Recipient Name</Label>
+                  <Input id="recipientName" placeholder="Business or Individual" required value={formData.recipientName} onChange={e => setFormData({...formData, recipientName: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="amount">Amount (USD)</Label>
@@ -252,27 +246,13 @@ export default function SendPaymentPage() {
                 </div>
               </div>
 
-              {deliveryMethod === 'print' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="routingNumber">Bank Routing Number</Label>
-                    <Input id="routingNumber" placeholder="9 Digits" maxLength={9} required value={formData.routingNumber} onChange={e => setFormData({...formData, routingNumber: e.target.value.replace(/\D/g, '')})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="accountNumber">Bank Account Number</Label>
-                    <Input id="accountNumber" placeholder="Full Account Number" required value={formData.accountNumber} onChange={e => setFormData({...formData, accountNumber: e.target.value.replace(/\D/g, '')})} />
-                  </div>
-                </div>
-              )}
-
               {deliveryMethod === 'stripe' && (
                 <div className="flex items-start gap-3 bg-secondary/20 p-4 rounded-xl border border-secondary">
                   <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-foreground">Stripe Payout Notice</p>
+                    <p className="text-xs font-bold text-foreground">Stripe Payout Policy</p>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      This transaction will move funds from your Stripe Payout balance to the primary bank account verified in your <strong>Stripe Dashboard</strong>. 
-                      Arbitrary third-party transfers via Stripe ACH typically require Stripe Connect.
+                      Funds will be sent to the <strong>verified bank account</strong> linked in your Stripe Dashboard. Ensure your Stripe balance is sufficient before initiating.
                     </p>
                   </div>
                 </div>
@@ -284,14 +264,14 @@ export default function SendPaymentPage() {
             <Card className="border-none shadow-md">
               <CardHeader className="border-b bg-secondary/30">
                 <CardTitle className="text-lg">Financial Source</CardTitle>
-                <CardDescription>Choose the authorized account to debit for this check.</CardDescription>
+                <CardDescription>Choose the account to debit for this check.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="fromAccount">Select Business Account</Label>
                   <Select value={formData.fromAccount} onValueChange={val => setFormData({...formData, fromAccount: val})}>
                     <SelectTrigger>
-                      <SelectValue placeholder={accLoading ? "Loading verified accounts..." : "Choose source account"} />
+                      <SelectValue placeholder={accLoading ? "Loading accounts..." : "Choose account"} />
                     </SelectTrigger>
                     <SelectContent>
                       {accounts?.map(acc => (
@@ -300,7 +280,7 @@ export default function SendPaymentPage() {
                         </SelectItem>
                       ))}
                       {(!accounts || accounts.length === 0) && !accLoading && (
-                        <SelectItem disabled value="none">No accounts linked. Go to Bank Accounts.</SelectItem>
+                        <SelectItem disabled value="none">No accounts linked.</SelectItem>
                       )}
                     </SelectContent>
                   </Select>
@@ -312,7 +292,7 @@ export default function SendPaymentPage() {
           <Card className="border-none shadow-md">
             <CardHeader className="border-b bg-secondary/30">
               <CardTitle className="text-lg">Memo Details</CardTitle>
-              <CardDescription>Add a purpose for your records.</CardDescription>
+              <CardDescription>Add a professional note for your records.</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-2">
@@ -320,10 +300,10 @@ export default function SendPaymentPage() {
                   <Label htmlFor="memo" className="flex items-center gap-2">Purpose / Memo</Label>
                   <Button type="button" variant="ghost" size="sm" className="h-8 text-[10px] text-accent font-bold uppercase tracking-wider flex gap-1" onClick={handleSuggestMemo} disabled={aiLoading}>
                     <Sparkles className="w-3 h-3" />
-                    {aiLoading ? 'Optimizing...' : 'AI Memo Assist'}
+                    {aiLoading ? 'Thinking...' : 'AI Memo Assist'}
                   </Button>
                 </div>
-                <Textarea id="memo" placeholder="Internal tracking memo (e.g. Invoice #204 - Marketing Consulting)" className="resize-none h-24 text-sm" value={formData.memo} onChange={e => setFormData({...formData, memo: e.target.value})} />
+                <Textarea id="memo" placeholder="Internal tracking memo" className="resize-none h-24 text-sm" value={formData.memo} onChange={e => setFormData({...formData, memo: e.target.value})} />
               </div>
             </CardContent>
           </Card>
@@ -331,8 +311,8 @@ export default function SendPaymentPage() {
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between pt-4">
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground bg-green-50/80 px-4 py-3 rounded-xl border border-green-100/50 shadow-sm">
               <ShieldCheck className="w-4 h-4 text-green-600 shrink-0" />
-              <span className="text-green-900 font-semibold tracking-tight">
-                {deliveryMethod === 'stripe' ? 'Authorized via Stripe Banking Network' : 'Bank-Compliant MICR Document Generation'}
+              <span className="text-green-900 font-semibold tracking-tight uppercase">
+                {deliveryMethod === 'stripe' ? 'Live Stripe Authorization' : 'Bank-Compliant Printing'}
               </span>
             </div>
             <div className="flex gap-3 w-full md:w-auto">
@@ -341,7 +321,7 @@ export default function SendPaymentPage() {
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Authorizing...
+                    Processing...
                   </>
                 ) : (
                   deliveryMethod === 'stripe' ? 'Execute Live ACH' : 'Issue Professional Check'
@@ -353,7 +333,7 @@ export default function SendPaymentPage() {
           {deliveryMethod === 'stripe' && (
             <div className="flex items-center gap-2 justify-center text-[10px] text-amber-600 font-bold uppercase tracking-widest animate-pulse">
               <AlertCircle className="w-3 h-3" />
-              Live Mode Active: Transaction will move real currency
+              Live Mode Active
             </div>
           )}
         </div>

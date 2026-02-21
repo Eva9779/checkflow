@@ -54,16 +54,12 @@
   .no-print {
     display: none !important;
   }
-  .print-only {
-    display: block !important;
-  }
   .check-container {
     box-shadow: none !important;
     border: none !important;
     margin: 0 !important;
     padding: 0.5in !important;
     width: 100% !important;
-    max-width: none !important;
     height: 11in !important;
   }
   .print-page-break {
@@ -71,14 +67,9 @@
   }
 }
 
-/* MICR Layout and OCR optimization */
 .micr-line {
   font-family: 'Courier New', Courier, monospace;
   font-weight: 500;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-}
-
-.check-font {
-  font-family: 'Inter', sans-serif;
 }

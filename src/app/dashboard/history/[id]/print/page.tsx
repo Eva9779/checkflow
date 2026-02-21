@@ -99,7 +99,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
       <div className="max-w-[8.5in] mx-auto space-y-8">
         {/* FRONT OF CHECK */}
         <div className="bg-white shadow-2xl check-container border border-slate-200 rounded-sm overflow-hidden aspect-[8.5/11] p-12">
-          <div className="relative border-[1px] border-slate-300 p-10 h-[3.5in] w-full bg-[#fcfcfc] rounded-md shadow-[inset_0_0_40px_rgba(0,0,0,0.02)]">
+          <div className="relative border-[1px] border-slate-300 p-10 h-[3.5in] w-full bg-[#fcfcfc] rounded-md">
             <div className="flex justify-between items-start mb-10">
               <div className="space-y-1">
                 <p className="font-bold text-lg uppercase tracking-tight text-slate-900">{payerName}</p>
@@ -110,9 +110,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               <div className="text-right">
                 <div className="flex flex-col items-end mb-4">
                   <p className="text-2xl font-bold font-mono text-slate-900">{transaction.checkNumber || '1001'}</p>
-                  {account?.fractionalRouting && (
-                    <p className="text-[10px] font-mono text-slate-400 mt-1">{account.fractionalRouting}</p>
-                  )}
                 </div>
                 <div className="flex items-center justify-end gap-3">
                   <span className="text-[10px] uppercase font-bold text-slate-400">Date:</span>
@@ -146,7 +143,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Financial Institution</p>
                 <p className="font-bold text-sm leading-tight text-slate-800">{bankName}</p>
-                <p className="text-[10px] text-slate-500 font-medium mt-1">U.S. Federal Reserve Routing Member</p>
               </div>
               <div className="flex flex-col justify-end">
                 <div className="flex items-end gap-3 mb-6">
@@ -157,7 +153,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 </div>
                 <div className="relative">
                   <div className="border-b-[1px] border-slate-400 w-full mb-1"></div>
-                  <p className="text-[9px] text-center uppercase font-bold text-slate-400 tracking-tighter">Authorized Signature - Professional Electronic Document</p>
+                  <p className="text-[9px] text-center uppercase font-bold text-slate-400 tracking-tighter">Authorized Signature - Digital Document</p>
                 </div>
               </div>
             </div>
@@ -166,68 +162,21 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                ⑆{routingNumber}⑆ {accountNumber.replace('****', '0000')}⑈ {transaction.checkNumber || '1001'}
             </div>
           </div>
-
-          <div className="mt-12 no-print">
-            <div className="bg-slate-50 border-[1px] border-dashed border-slate-200 p-8 rounded-xl">
-              <h3 className="text-base font-bold flex items-center gap-2 mb-4 text-slate-800">
-                <ShieldCheck className="w-5 h-5 text-accent" /> Professional Security Standards
-              </h3>
-              <ul className="text-xs space-y-3 text-slate-600 list-disc pl-5 font-medium">
-                <li>This document is a legally valid U.S. Business E-Check formatted per Reg CC.</li>
-                <li>Print on high-quality white paper using a Laser Jet printer for best results.</li>
-                <li>The MICR line at the bottom is optimized for mobile deposit scanners.</li>
-              </ul>
-            </div>
-          </div>
         </div>
 
-        {/* BACK OF CHECK (Print Only / Reference) */}
+        {/* BACK OF CHECK */}
         <div className="bg-white shadow-2xl check-container border border-slate-200 rounded-sm overflow-hidden aspect-[8.5/11] p-12 print-page-break">
           <div className="relative border-[1px] border-slate-300 h-[3.5in] w-full bg-[#fafafa] p-8 rounded-md">
-            <div className="absolute top-8 right-8 w-1/3">
+            <div className="absolute top-8 right-8 w-1/2">
               <div className="border-b-[1px] border-slate-400 w-full mb-1"></div>
               <p className="text-[9px] text-center font-bold text-slate-400 uppercase">Endorse Here</p>
-              <div className="h-20 border-b-[1px] border-slate-400 border-dashed mb-1 opacity-40"></div>
+              <div className="h-24 border-b-[1px] border-slate-400 border-dashed mb-1 opacity-20"></div>
               <p className="text-[8px] text-center font-bold text-slate-400 uppercase leading-tight">
-                DO NOT WRITE, STAMP, OR SIGN<br />BELOW THIS LINE
+                DO NOT WRITE BELOW THIS LINE
               </p>
             </div>
-
-            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none rotate-[-45deg]">
-              <div className="text-4xl font-bold text-black flex flex-col items-center gap-4">
-                <span>SECURITY DOCUMENT</span>
-                <span>SECURITY DOCUMENT</span>
-                <span>SECURITY DOCUMENT</span>
-              </div>
-            </div>
-            
-            <div className="mt-40 space-y-4">
-              <div className="flex items-center gap-2 text-slate-400">
-                <Info className="w-4 h-4" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Endorsement Verification Area</span>
-              </div>
-              <div className="grid grid-cols-12 gap-1 h-2 opacity-10">
-                {Array.from({ length: 48 }).map((_, i) => (
-                  <div key={i} className="bg-slate-900 rounded-full w-full h-full"></div>
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-12 p-8 border border-dashed rounded-xl bg-slate-50 no-print">
-            <h3 className="font-bold text-slate-800 mb-2">Printing the Back</h3>
-            <p className="text-sm text-slate-600 leading-relaxed mb-4">
-              Some banks require the endorsement side to be printed on the reverse side of the front. You can print the front, then flip the page and print the back to match standard bank processing requirements.
-            </p>
-            <div className="flex gap-4">
-              <div className="w-1/2 p-4 bg-white rounded border text-[10px] flex flex-col items-center text-center gap-2">
-                <div className="w-full h-8 bg-slate-100 rounded"></div>
-                <span>Step 1: Print Front</span>
-              </div>
-              <div className="w-1/2 p-4 bg-white rounded border text-[10px] flex flex-col items-center text-center gap-2">
-                <div className="w-full h-8 bg-slate-100 rounded border-t-4 border-t-accent"></div>
-                <span>Step 2: Print Back</span>
-              </div>
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none rotate-[-45deg]">
+              <span className="text-4xl font-bold">SECURITY DOCUMENT</span>
             </div>
           </div>
         </div>
