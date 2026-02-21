@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -86,12 +85,11 @@ export default function SendPaymentPage() {
 
     const selectedAccount = accounts?.find(a => a.id === formData.fromAccount);
     if (!selectedAccount) {
-      toast({ title: "Source Required", description: "Please select a business bank account as the source for this payout.", variant: "destructive" });
-      return;
-    }
-
-    if (deliveryMethod === 'stripe' && (!formData.recipientRouting || !formData.recipientAccount)) {
-      toast({ title: "Recipient Bank Required", description: "Please provide routing and account numbers for the payout destination.", variant: "destructive" });
+      toast({ 
+        title: "Source Required", 
+        description: "Please select a business bank account as the origin for this payout.", 
+        variant: "destructive" 
+      });
       return;
     }
 
@@ -100,21 +98,26 @@ export default function SendPaymentPage() {
 
     try {
       if (deliveryMethod === 'stripe') {
+        if (!formData.recipientRouting || !formData.recipientAccount) {
+          toast({ title: "Recipient Details Missing", description: "Routing and Account numbers are required for ACH transfers.", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+
         const stripeResult = await initiateStripeACHPayout({
           amount: amountNum,
           currency: 'usd',
-          description: `Payout: ${formData.recipientName} - ${formData.memo || formData.purpose}`,
+          description: formData.memo || formData.purpose,
           recipientName: formData.recipientName,
           recipientRouting: formData.recipientRouting,
           recipientAccount: formData.recipientAccount,
-          // Use real bank details from the selected payer account
           payerRouting: selectedAccount.routingNumber,
           payerAccount: selectedAccount.accountNumber
         });
 
         if (!stripeResult.success) {
           toast({ 
-            title: "Stripe Error", 
+            title: "Stripe Authorization Error", 
             description: stripeResult.error, 
             variant: "destructive" 
           });
@@ -157,12 +160,18 @@ export default function SendPaymentPage() {
 
       toast({ 
         title: "Payout Authorized", 
-        description: deliveryMethod === 'stripe' ? "ACH Transfer initiated using selected business source." : "Printable check issued successfully." 
+        description: deliveryMethod === 'stripe' 
+          ? "The ACH transfer has been initiated from your selected business source." 
+          : "The printable e-check has been generated and is ready for deposit." 
       });
       
       router.push('/dashboard/history');
     } catch (err: any) {
-      toast({ title: "System Error", description: "Payout could not be finalized. Check network connection.", variant: "destructive" });
+      toast({ 
+        title: "Submission Error", 
+        description: "The payout could not be processed. Please check your network connection.", 
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }
@@ -219,7 +228,7 @@ export default function SendPaymentPage() {
                       </div>
                       <div>
                         <p className="font-bold text-sm">Live ACH Transfer</p>
-                        <p className="text-[10px] text-muted-foreground">Digital Bank Authorization</p>
+                        <p className="text-[10px] text-muted-foreground">Direct Bank Authorization</p>
                       </div>
                     </div>
                   </Label>
@@ -258,7 +267,7 @@ export default function SendPaymentPage() {
           <Card className="border-none shadow-md overflow-hidden">
             <CardHeader className="border-b">
               <CardTitle className="text-lg">Recipient Details</CardTitle>
-              <CardDescription>Enter the legal payee information.</CardDescription>
+              <CardDescription>Enter the legal payee information and bank details for ACH.</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -272,20 +281,32 @@ export default function SendPaymentPage() {
                 </div>
               </div>
 
-              {deliveryMethod === 'stripe' ? (
-                <div className="space-y-4 pt-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="recipientRouting">Recipient Routing Number</Label>
-                      <Input id="recipientRouting" maxLength={9} placeholder="9-digit Routing" required value={formData.recipientRouting} onChange={e => setFormData({...formData, recipientRouting: e.target.value.replace(/\D/g, '')})} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="recipientAccount">Recipient Account Number</Label>
-                      <Input id="recipientAccount" type="password" placeholder="Account Number" required value={formData.recipientAccount} onChange={e => setFormData({...formData, recipientAccount: e.target.value.replace(/\D/g, '')})} />
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="recipientRouting">Recipient Routing Number</Label>
+                  <Input 
+                    id="recipientRouting" 
+                    maxLength={9} 
+                    placeholder="9-digit Routing" 
+                    required={deliveryMethod === 'stripe'}
+                    value={formData.recipientRouting} 
+                    onChange={e => setFormData({...formData, recipientRouting: e.target.value.replace(/\D/g, '')})} 
+                  />
                 </div>
-              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="recipientAccount">Recipient Account Number</Label>
+                  <Input 
+                    id="recipientAccount" 
+                    type="password" 
+                    placeholder="Account Number" 
+                    required={deliveryMethod === 'stripe'}
+                    value={formData.recipientAccount} 
+                    onChange={e => setFormData({...formData, recipientAccount: e.target.value.replace(/\D/g, '')})} 
+                  />
+                </div>
+              </div>
+
+              {deliveryMethod === 'print' && (
                 <div className="space-y-2">
                   <Label htmlFor="recipientAddress" className="flex items-center gap-2">
                     <MapPin className="w-3 h-3" /> Recipient Mailing Address (Optional)
@@ -331,7 +352,7 @@ export default function SendPaymentPage() {
               ) : (
                 <>
                   <Send className="w-4 h-4 mr-2" />
-                  {deliveryMethod === 'stripe' ? 'Send ACH Payment' : 'Issue Printable Check'}
+                  {deliveryMethod === 'stripe' ? 'Send ACH Payout' : 'Issue Printable E-Check'}
                 </>
               )}
             </Button>

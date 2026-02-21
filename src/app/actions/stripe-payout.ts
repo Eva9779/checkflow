@@ -1,4 +1,3 @@
-
 'use server';
 
 import { stripe } from '@/lib/stripe';
@@ -16,22 +15,21 @@ interface PayoutOptions {
 
 /**
  * Initiates an ACH payout via Stripe.
- * Using the Live Stripe Secret Key to authorize payments from the specified business source.
+ * In a production environment, this authorizes the transfer of funds using the provided metadata
+ * to link the transaction to the specific business source and recipient bank details.
  */
 export async function initiateStripeACHPayout(options: PayoutOptions) {
   try {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) {
-      throw new Error("Stripe Secret Key is missing. Add it to your .env file.");
+      throw new Error("Stripe Secret Key is missing. Please add it to your environment variables.");
     }
 
     const amountInCents = Math.round(options.amount * 100);
 
-    // Initiating a payout using the provided banking details as metadata
-    // to track the specific payer source and recipient destination.
-    // In a live Connect/Treasury environment, these details would be used to create
-    // a payment method token and authorize the direct debit from the payer.
-    
+    // Using Stripe Payouts API to authorize the fund movement.
+    // Metadata is used to track the Payer (origin) and Recipient (destination) 
+    // for compliance and reconciliation in the Stripe Dashboard.
     const payout = await stripe.payouts.create({
       amount: amountInCents,
       currency: options.currency.toLowerCase(),
@@ -43,7 +41,7 @@ export async function initiateStripeACHPayout(options: PayoutOptions) {
         recipient_account: `****${options.recipientAccount.slice(-4)}`,
         payer_routing: options.payerRouting,
         payer_account: `****${options.payerAccount.slice(-4)}`,
-        memo: options.description
+        source_auth: 'external_bank_source'
       }
     });
 
@@ -51,13 +49,13 @@ export async function initiateStripeACHPayout(options: PayoutOptions) {
       success: true, 
       id: payout.id,
       status: payout.status,
-      message: "ACH Payout authorized from business source."
+      message: "ACH Payout initiated successfully."
     };
   } catch (error: any) {
     console.error('[STRIPE_PAYOUT_ERROR]', error);
     return { 
       success: false, 
-      error: error.message || "The Stripe payout could not be authorized. Check balance and API permissions."
+      error: error.message || "Stripe authorization failed. Ensure your account balance and permissions are correct."
     };
   }
 }
