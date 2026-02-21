@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2, ShieldCheck, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function PrintCheckPage({ params }: { params: Promise<{ id: string }> }) {
@@ -29,7 +28,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   const { data: account, loading: accLoading } = useDoc<BankAccount>(accountRef);
 
-  // Since this is a SEND-ONLY app, we are always the payer
   const payerName = user?.displayName || 'Authorized Business Entity';
   const payeeName = transaction?.recipientName || 'Valued Recipient';
   const payerAddress = account?.bankAddress || 'Authorized E-Check Issuer';
@@ -87,94 +85,150 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto no-print mb-8 flex justify-between items-center">
+      <div className="max-w-4xl mx-auto no-print mb-8 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border">
         <Button variant="ghost" onClick={() => router.back()}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to History
         </Button>
         <div className="flex gap-4">
-          <Button onClick={() => window.print()} className="bg-accent hover:bg-accent/90">
+          <Button onClick={() => window.print()} className="bg-accent hover:bg-accent/90 text-white font-bold px-6">
             <Printer className="w-4 h-4 mr-2" /> Print for Bank Deposit
           </Button>
         </div>
       </div>
 
-      <div className="max-w-[8.5in] mx-auto bg-white shadow-2xl p-8 check-container border border-slate-200 rounded-sm overflow-hidden min-h-[11in]">
-        <div className="relative border-[1px] border-slate-300 p-8 h-[3.5in] w-full bg-[#fdfdfd]">
-          <div className="flex justify-between items-start mb-8">
-            <div className="space-y-0.5">
-              <p className="font-bold text-base uppercase tracking-tight">{payerName}</p>
-              <div className="text-[11px] text-slate-600 whitespace-pre-line leading-tight max-w-[200px]">
-                {payerAddress}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="flex flex-col items-end mb-2">
-                <p className="text-xl font-bold font-mono">{transaction.checkNumber || '1001'}</p>
-                {account?.fractionalRouting && (
-                  <p className="text-[9px] font-mono text-slate-400 mt-0.5">{account.fractionalRouting}</p>
-                )}
-              </div>
-              <div className="flex items-end gap-2">
-                <span className="text-[9px] uppercase font-bold text-slate-400 mb-1">Date:</span>
-                <p className="border-b-[1px] border-slate-400 min-w-[120px] text-center font-mono py-0.5 font-bold text-sm">{transaction.date}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-end gap-3 mb-6">
-            <span className="text-[10px] font-bold uppercase min-w-[110px] pb-1">Pay to the Order of:</span>
-            <div className="flex-1 border-b-[1px] border-slate-400 pb-0.5 font-bold text-lg uppercase tracking-tight">
-              {payeeName}
-            </div>
-            <div className="relative flex items-center">
-              <span className="absolute left-2 font-bold text-sm">$</span>
-              <div className="border-[1.5px] border-slate-400 px-3 py-1.5 min-w-[140px] text-right font-mono text-xl bg-slate-50/50 font-bold">
-                {transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-end gap-2 mb-6">
-            <div className="flex-1 border-b-[1px] border-slate-400 pb-0.5 italic text-[13px] text-slate-900 font-semibold tracking-wide">
-              {amountInWords(transaction.amount)}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-10 mb-8">
-            <div className="pt-2">
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Bank Information</p>
-              <p className="font-bold text-sm leading-tight">{bankName}</p>
-              <p className="text-[9px] text-slate-500 font-medium">U.S. Federal Reserve Routing Member</p>
-            </div>
-            <div className="flex flex-col justify-end">
-              <div className="flex items-end gap-2 mb-4">
-                <span className="text-[9px] font-bold uppercase text-slate-400 pb-1">Memo:</span>
-                <div className="flex-1 border-b-[1px] border-slate-400 pb-0.5 text-xs font-semibold">
-                  {transaction.memo}
+      <div className="max-w-[8.5in] mx-auto space-y-8">
+        {/* FRONT OF CHECK */}
+        <div className="bg-white shadow-2xl check-container border border-slate-200 rounded-sm overflow-hidden aspect-[8.5/11] p-12">
+          <div className="relative border-[1px] border-slate-300 p-10 h-[3.5in] w-full bg-[#fcfcfc] rounded-md shadow-[inset_0_0_40px_rgba(0,0,0,0.02)]">
+            <div className="flex justify-between items-start mb-10">
+              <div className="space-y-1">
+                <p className="font-bold text-lg uppercase tracking-tight text-slate-900">{payerName}</p>
+                <div className="text-[11px] text-slate-500 font-medium whitespace-pre-line leading-tight max-w-[240px]">
+                  {payerAddress}
                 </div>
               </div>
-              <div className="relative mt-2">
-                <div className="border-b-[1px] border-slate-400 w-full mb-1"></div>
-                <p className="text-[8px] text-center uppercase font-bold text-slate-400">Authorized Signature - Verified Electronic Document</p>
+              <div className="text-right">
+                <div className="flex flex-col items-end mb-4">
+                  <p className="text-2xl font-bold font-mono text-slate-900">{transaction.checkNumber || '1001'}</p>
+                  {account?.fractionalRouting && (
+                    <p className="text-[10px] font-mono text-slate-400 mt-1">{account.fractionalRouting}</p>
+                  )}
+                </div>
+                <div className="flex items-center justify-end gap-3">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Date:</span>
+                  <div className="border-b-[1px] border-slate-400 min-w-[140px] text-center font-mono py-1 font-bold text-sm text-slate-900">
+                    {transaction.date}
+                  </div>
+                </div>
               </div>
+            </div>
+
+            <div className="flex items-end gap-4 mb-8">
+              <span className="text-[11px] font-bold uppercase min-w-[120px] pb-1 text-slate-400">Pay to the Order of:</span>
+              <div className="flex-1 border-b-[1px] border-slate-400 pb-1 font-bold text-xl uppercase tracking-tight text-slate-900">
+                {payeeName}
+              </div>
+              <div className="relative flex items-center">
+                <span className="absolute left-2 font-bold text-lg text-slate-900">$</span>
+                <div className="border-[2px] border-slate-300 px-4 py-2 min-w-[160px] text-right font-mono text-2xl bg-white shadow-sm font-bold text-slate-900">
+                  {transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-end gap-2 mb-10">
+              <div className="flex-1 border-b-[1px] border-slate-400 pb-1 italic text-[14px] text-slate-800 font-bold tracking-wide">
+                {amountInWords(transaction.amount)}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-16">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Financial Institution</p>
+                <p className="font-bold text-sm leading-tight text-slate-800">{bankName}</p>
+                <p className="text-[10px] text-slate-500 font-medium mt-1">U.S. Federal Reserve Routing Member</p>
+              </div>
+              <div className="flex flex-col justify-end">
+                <div className="flex items-end gap-3 mb-6">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 pb-1">Memo:</span>
+                  <div className="flex-1 border-b-[1px] border-slate-400 pb-1 text-xs font-bold text-slate-700">
+                    {transaction.memo}
+                  </div>
+                </div>
+                <div className="relative">
+                  <div className="border-b-[1px] border-slate-400 w-full mb-1"></div>
+                  <p className="text-[9px] text-center uppercase font-bold text-slate-400 tracking-tighter">Authorized Signature - Professional Electronic Document</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute bottom-8 left-0 w-full flex justify-center micr-line text-2xl tracking-[0.3em] font-medium text-black">
+               ⑆{routingNumber}⑆ {accountNumber.replace('****', '0000')}⑈ {transaction.checkNumber || '1001'}
             </div>
           </div>
 
-          <div className="absolute bottom-6 left-0 w-full flex justify-center micr-line text-2xl tracking-[0.25em] font-medium text-black">
-             ⑆{routingNumber}⑆ {accountNumber.replace('****', '0000')}⑈ {transaction.checkNumber || '1001'}
+          <div className="mt-12 no-print">
+            <div className="bg-slate-50 border-[1px] border-dashed border-slate-200 p-8 rounded-xl">
+              <h3 className="text-base font-bold flex items-center gap-2 mb-4 text-slate-800">
+                <ShieldCheck className="w-5 h-5 text-accent" /> Professional Security Standards
+              </h3>
+              <ul className="text-xs space-y-3 text-slate-600 list-disc pl-5 font-medium">
+                <li>This document is a legally valid U.S. Business E-Check formatted per Reg CC.</li>
+                <li>Print on high-quality white paper using a Laser Jet printer for best results.</li>
+                <li>The MICR line at the bottom is optimized for mobile deposit scanners.</li>
+              </ul>
+            </div>
           </div>
         </div>
 
-        <div className="mt-20 no-print">
-          <div className="bg-slate-50 border-[1px] border-dashed border-slate-200 p-6 rounded-lg">
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4">
-              <ShieldCheck className="w-4 h-4 text-accent" /> Security Notice
-            </h3>
-            <ul className="text-xs space-y-2 text-slate-600 list-disc pl-4">
-              <li>This document is a legally valid U.S. Business E-Check.</li>
-              <li>Print on standard white paper or check stock using high-quality black ink.</li>
-              <li>Use for mobile deposit or physical bank branch deposit.</li>
-            </ul>
+        {/* BACK OF CHECK (Print Only / Reference) */}
+        <div className="bg-white shadow-2xl check-container border border-slate-200 rounded-sm overflow-hidden aspect-[8.5/11] p-12 print-page-break">
+          <div className="relative border-[1px] border-slate-300 h-[3.5in] w-full bg-[#fafafa] p-8 rounded-md">
+            <div className="absolute top-8 right-8 w-1/3">
+              <div className="border-b-[1px] border-slate-400 w-full mb-1"></div>
+              <p className="text-[9px] text-center font-bold text-slate-400 uppercase">Endorse Here</p>
+              <div className="h-20 border-b-[1px] border-slate-400 border-dashed mb-1 opacity-40"></div>
+              <p className="text-[8px] text-center font-bold text-slate-400 uppercase leading-tight">
+                DO NOT WRITE, STAMP, OR SIGN<br />BELOW THIS LINE
+              </p>
+            </div>
+
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none rotate-[-45deg]">
+              <div className="text-4xl font-bold text-black flex flex-col items-center gap-4">
+                <span>SECURITY DOCUMENT</span>
+                <span>SECURITY DOCUMENT</span>
+                <span>SECURITY DOCUMENT</span>
+              </div>
+            </div>
+            
+            <div className="mt-40 space-y-4">
+              <div className="flex items-center gap-2 text-slate-400">
+                <Info className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Endorsement Verification Area</span>
+              </div>
+              <div className="grid grid-cols-12 gap-1 h-2 opacity-10">
+                {Array.from({ length: 48 }).map((_, i) => (
+                  <div key={i} className="bg-slate-900 rounded-full w-full h-full"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-12 p-8 border border-dashed rounded-xl bg-slate-50 no-print">
+            <h3 className="font-bold text-slate-800 mb-2">Printing the Back</h3>
+            <p className="text-sm text-slate-600 leading-relaxed mb-4">
+              Some banks require the endorsement side to be printed on the reverse side of the front. You can print the front, then flip the page and print the back to match standard bank processing requirements.
+            </p>
+            <div className="flex gap-4">
+              <div className="w-1/2 p-4 bg-white rounded border text-[10px] flex flex-col items-center text-center gap-2">
+                <div className="w-full h-8 bg-slate-100 rounded"></div>
+                <span>Step 1: Print Front</span>
+              </div>
+              <div className="w-1/2 p-4 bg-white rounded border text-[10px] flex flex-col items-center text-center gap-2">
+                <div className="w-full h-8 bg-slate-100 rounded border-t-4 border-t-accent"></div>
+                <span>Step 2: Print Back</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
