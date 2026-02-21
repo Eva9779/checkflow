@@ -1,11 +1,12 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'E-CheckFlow | Professional U.S. E-Check Payments',
-  description: 'Secure and efficient U.S. account e-check payment management.',
+  title: 'E-CheckFlow | Secure Business Payouts & ACH',
+  description: 'Issue professional U.S. e-checks and ACH transfers instantly. Secure, compliant, and ready for enterprise payouts.',
 };
 
 export default function RootLayout({
