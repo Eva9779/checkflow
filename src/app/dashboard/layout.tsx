@@ -2,7 +2,7 @@
 'use client';
 
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { LayoutDashboard, Send, Download, History, Building2, UserCircle, LogOut, Bell } from 'lucide-react';
+import { LayoutDashboard, Send, History, Building2, UserCircle, LogOut, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
@@ -31,7 +31,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const getPageTitle = () => {
     if (pathname === '/dashboard') return 'Overview';
     if (pathname.includes('/send')) return 'Send E-Check';
-    if (pathname.includes('/requests')) return 'Request Payment';
     if (pathname.includes('/history')) return 'Transaction History';
     if (pathname.includes('/accounts')) return 'Bank Accounts';
     return 'Dashboard';
@@ -65,14 +64,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Link href="/dashboard/send" className="flex items-center gap-3">
                     <Send className="w-5 h-5" />
                     <span className="font-medium">Send E-Check</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === '/dashboard/requests'} tooltip="Request Payment">
-                  <Link href="/dashboard/requests" className="flex items-center gap-3">
-                    <Download className="w-5 h-5" />
-                    <span className="font-medium">Request Payment</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -128,7 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="flex items-center gap-3 ml-2 cursor-pointer group">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-foreground leading-none">{user.displayName || user.email}</p>
-                  <p className="text-xs text-muted-foreground">Standard Account</p>
+                  <p className="text-xs text-muted-foreground">Business Account</p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center font-bold text-primary group-hover:ring-2 ring-accent transition-all">
                   {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
