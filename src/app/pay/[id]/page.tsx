@@ -49,14 +49,9 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
 
-  // Construction of the document reference
   const txRef = useMemo(() => {
     if (!db || !userId || !id) return null;
-    try {
-      return doc(db, 'users', userId, 'transactions', id);
-    } catch (e) {
-      return null;
-    }
+    return doc(db, 'users', userId, 'transactions', id);
   }, [db, userId, id]);
 
   const { data: transaction, loading, error } = useDoc<Transaction>(txRef);
@@ -149,7 +144,7 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
     updateDoc(txRef, updateData)
       .then(() => {
         setCompleted(true);
-        toast({ title: "Payment Authorized", description: "E-check details have been securely sent." });
+        toast({ title: "Payment Authorized" });
       })
       .catch(async (err) => {
         const permissionError = new FirestorePermissionError({
@@ -162,18 +157,19 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
       .finally(() => setSubmitting(false));
   };
 
-  // If loading or we don't have a path yet, show the loader
-  if (loading || !txRef) {
+  // 1. Initial Loading State (while connecting to Firestore)
+  if (loading && !transaction) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center space-y-4">
-          <Loader2 className="w-10 h-10 animate-spin text-accent mx-auto" />
+          <Loader2 className="w-12 h-12 animate-spin text-accent mx-auto" />
           <p className="text-sm text-muted-foreground animate-pulse font-medium tracking-tight">Securing Connection...</p>
         </div>
       </div>
     );
   }
 
+  // 2. Real Errors or Truly Not Found
   const isAccessDenied = error && error.message.toLowerCase().includes('permission');
   const isDocNotFound = !transaction && !loading;
 
@@ -190,7 +186,7 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
           <CardDescription className="mb-8 text-base leading-relaxed text-muted-foreground">
             {isAccessDenied 
               ? 'Security protocols are preventing access to this payment request.'
-              : 'This payment request may have expired, been fulfilled, or the secure link is invalid.'}
+              : 'The requested payment document could not be found at the specified path.'}
           </CardDescription>
           
           <div className="space-y-3">
@@ -204,7 +200,7 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
           
           <div className="mt-8 p-4 bg-slate-100 rounded-lg text-left text-[10px] font-mono space-y-1">
             <p className="font-bold text-slate-500 uppercase">Diagnostics:</p>
-            <p className="truncate">Path: {txRef.path}</p>
+            <p className="truncate">Path: {txRef?.path}</p>
             <p>ID: {id}</p>
             <p>UserID: {userId}</p>
             <p>Error: {error?.message || 'None'}</p>
@@ -214,6 +210,7 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
     );
   }
 
+  // 3. Success / Completed State
   if (completed || transaction?.status === 'completed') {
     return (
       <div className="min-h-screen bg-slate-50 py-12 px-4 flex items-center justify-center">
@@ -231,6 +228,7 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
     );
   }
 
+  // 4. Main Authorization Flow
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4">
       <div className="max-w-md mx-auto space-y-6">

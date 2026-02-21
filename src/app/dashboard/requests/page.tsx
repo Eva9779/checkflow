@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QrCode, Copy, CheckCircle2, Loader2, Download, ExternalLink } from 'lucide-react';
+import { QrCode, Copy, CheckCircle2, Loader2, Download, ExternalLink, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -44,15 +44,18 @@ export default function RequestPaymentPage() {
 
     setLoading(true);
 
-    // 1. Generate ID client-side
+    // 1. Generate IDs and URLs immediately for "Optimistic" UI
     const transactionsRef = collection(db, 'users', user.uid, 'transactions');
     const newTxRef = doc(transactionsRef);
     const txId = newTxRef.id;
 
-    // 2. Construct URLs
     const origin = window.location.origin;
     const url = `${origin}/pay/${txId}?u=${user.uid}`;
     
+    // 2. Show the QR code instantly
+    setRequestUrl(url);
+    setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`);
+
     const txData = {
       type: 'requested' as const,
       recipientName: user.displayName || user.email || 'Authorized Merchant',
@@ -65,24 +68,23 @@ export default function RequestPaymentPage() {
       payerTargetName: formData.payerName
     };
 
-    try {
-      // 3. Wait for the write to COMPLETE before showing the link
-      await setDoc(newTxRef, txData);
-      
-      setRequestUrl(url);
-      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`);
-      toast({ title: "Payment Request Live" });
-    } catch (error) {
-      const permissionError = new FirestorePermissionError({
-        path: newTxRef.path,
-        operation: 'create',
-        requestResourceData: txData
+    // 3. Save to Firestore in the background
+    setDoc(newTxRef, txData)
+      .then(() => {
+        toast({ title: "Payment Request Live" });
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: newTxRef.path,
+          operation: 'create',
+          requestResourceData: txData
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ title: "Save Error", description: "The request link was generated but may not be saved. Check history.", variant: "destructive" });
+      })
+      .finally(() => {
+        setLoading(false);
       });
-      errorEmitter.emit('permission-error', permissionError);
-      toast({ title: "Could not create request", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
   };
 
   const copyToClipboard = () => {
@@ -102,7 +104,7 @@ export default function RequestPaymentPage() {
       </div>
 
       {requestUrl ? (
-        <Card className="border-accent/30 bg-accent/5 overflow-hidden shadow-lg">
+        <Card className="border-accent/30 bg-accent/5 overflow-hidden shadow-lg animate-in fade-in zoom-in duration-300">
           <CardHeader className="text-center pb-2">
             <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-10 h-10 text-accent" />
