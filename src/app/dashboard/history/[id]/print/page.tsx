@@ -1,3 +1,4 @@
+
 'use client';
 
 import { use, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, ShieldCheck, Info } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function PrintCheckPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,6 +24,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   const accountRef = useMemo(() => {
     if (!db || !user || !transaction?.fromAccountId) return null;
+    if (transaction.fromAccountId === 'stripe-vault') return null;
     return doc(db, 'users', user.uid, 'accounts', transaction.fromAccountId);
   }, [db, user, transaction]);
 
@@ -177,6 +179,10 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             </div>
             <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none rotate-[-45deg]">
               <span className="text-4xl font-bold">SECURITY DOCUMENT</span>
+            </div>
+            <div className="absolute bottom-4 left-4 flex items-center gap-2 text-slate-400">
+              <ShieldCheck className="w-4 h-4" />
+              <span className="text-[10px] uppercase font-bold tracking-widest">Verified Digital E-Check</span>
             </div>
           </div>
         </div>
