@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Sparkles, Send, ShieldCheck, Loader2, Hash, CreditCard, ReceiptText, AlertCircle } from 'lucide-react';
+import { Sparkles, Send, ShieldCheck, Loader2, Hash, CreditCard, ReceiptText, AlertCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { aiMemoAssistant } from '@/ai/flows/ai-memo-assistant';
 import { useFirestore, useUser, useCollection } from '@/firebase';
@@ -79,13 +79,8 @@ export default function SendPaymentPage() {
     if (!db || !user) return;
     
     // Strict Validation
-    if (!formData.fromAccount) {
-      toast({ title: "Account Required", description: "Please select a source account.", variant: "destructive" });
-      return;
-    }
-
-    if (formData.routingNumber.length !== 9) {
-      toast({ title: "Invalid Routing", description: "U.S. Routing numbers must be exactly 9 digits.", variant: "destructive" });
+    if (deliveryMethod === 'print' && !formData.fromAccount) {
+      toast({ title: "Account Required", description: "Source account is required for printable checks.", variant: "destructive" });
       return;
     }
 
@@ -131,7 +126,7 @@ export default function SendPaymentPage() {
         status: deliveryMethod === 'stripe' ? 'completed' : 'pending',
         date: new Date().toISOString().split('T')[0],
         checkNumber: deliveryMethod === 'print' ? formData.checkNumber : null,
-        fromAccountId: formData.fromAccount,
+        fromAccountId: deliveryMethod === 'print' ? formData.fromAccount : 'stripe-vault',
         deliveryMethod,
         stripeTransferId: stripeTxId,
         createdAt: serverTimestamp()
@@ -166,7 +161,6 @@ export default function SendPaymentPage() {
         variant: "destructive" 
       });
     } finally {
-      // Ensure loading is always cleared
       setTimeout(() => setLoading(false), 500);
     }
   };
@@ -258,44 +252,69 @@ export default function SendPaymentPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="routingNumber">Bank Routing Number</Label>
-                  <Input id="routingNumber" placeholder="9 Digits" maxLength={9} required value={formData.routingNumber} onChange={e => setFormData({...formData, routingNumber: e.target.value.replace(/\D/g, '')})} />
+              {deliveryMethod === 'print' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="routingNumber">Bank Routing Number</Label>
+                    <Input id="routingNumber" placeholder="9 Digits" maxLength={9} required value={formData.routingNumber} onChange={e => setFormData({...formData, routingNumber: e.target.value.replace(/\D/g, '')})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="accountNumber">Bank Account Number</Label>
+                    <Input id="accountNumber" placeholder="Full Account Number" required value={formData.accountNumber} onChange={e => setFormData({...formData, accountNumber: e.target.value.replace(/\D/g, '')})} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="accountNumber">Bank Account Number</Label>
-                  <Input id="accountNumber" placeholder="Full Account Number" required value={formData.accountNumber} onChange={e => setFormData({...formData, accountNumber: e.target.value.replace(/\D/g, '')})} />
+              )}
+
+              {deliveryMethod === 'stripe' && (
+                <div className="flex items-start gap-3 bg-secondary/20 p-4 rounded-xl border border-secondary">
+                  <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-foreground">Stripe Payout Notice</p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      This transaction will move funds from your Stripe Payout balance to the primary bank account verified in your <strong>Stripe Dashboard</strong>. 
+                      Arbitrary third-party transfers via Stripe ACH typically require Stripe Connect.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
+          {deliveryMethod === 'print' && (
+            <Card className="border-none shadow-md">
+              <CardHeader className="border-b bg-secondary/30">
+                <CardTitle className="text-lg">Financial Source</CardTitle>
+                <CardDescription>Choose the authorized account to debit for this check.</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fromAccount">Select Business Account</Label>
+                  <Select value={formData.fromAccount} onValueChange={val => setFormData({...formData, fromAccount: val})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={accLoading ? "Loading verified accounts..." : "Choose source account"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts?.map(acc => (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.bankName} (****{acc.accountNumber.slice(-4)})
+                        </SelectItem>
+                      ))}
+                      {(!accounts || accounts.length === 0) && !accLoading && (
+                        <SelectItem disabled value="none">No accounts linked. Go to Bank Accounts.</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="border-none shadow-md">
             <CardHeader className="border-b bg-secondary/30">
-              <CardTitle className="text-lg">Financial Source</CardTitle>
-              <CardDescription>Choose the authorized account to debit.</CardDescription>
+              <CardTitle className="text-lg">Memo Details</CardTitle>
+              <CardDescription>Add a purpose for your records.</CardDescription>
             </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fromAccount">Select Business Account</Label>
-                <Select value={formData.fromAccount} onValueChange={val => setFormData({...formData, fromAccount: val})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={accLoading ? "Loading verified accounts..." : "Choose source account"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts?.map(acc => (
-                      <SelectItem key={acc.id} value={acc.id}>
-                        {acc.bankName} (****{acc.accountNumber.slice(-4)})
-                      </SelectItem>
-                    ))}
-                    {(!accounts || accounts.length === 0) && !accLoading && (
-                      <SelectItem disabled value="none">No accounts linked. Go to Bank Accounts.</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
+            <CardContent className="pt-6">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="memo" className="flex items-center gap-2">Purpose / Memo</Label>
@@ -313,12 +332,12 @@ export default function SendPaymentPage() {
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground bg-green-50/80 px-4 py-3 rounded-xl border border-green-100/50 shadow-sm">
               <ShieldCheck className="w-4 h-4 text-green-600 shrink-0" />
               <span className="text-green-900 font-semibold tracking-tight">
-                {deliveryMethod === 'stripe' ? 'Live Production Payout: Authorization via Stripe Banking Network' : 'Bank-Compliant Document: Optimized for U.S. Federal Reserve Deposits'}
+                {deliveryMethod === 'stripe' ? 'Authorized via Stripe Banking Network' : 'Bank-Compliant MICR Document Generation'}
               </span>
             </div>
             <div className="flex gap-3 w-full md:w-auto">
               <Button type="button" variant="outline" className="h-12 px-6" onClick={() => router.back()}>Cancel</Button>
-              <Button type="submit" className="flex-1 md:flex-none h-12 bg-primary min-w-[240px] font-bold text-base shadow-lg hover:shadow-primary/20" disabled={loading || !formData.fromAccount}>
+              <Button type="submit" className="flex-1 md:flex-none h-12 bg-primary min-w-[240px] font-bold text-base shadow-lg hover:shadow-primary/20" disabled={loading || (deliveryMethod === 'print' && !formData.fromAccount)}>
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -334,7 +353,7 @@ export default function SendPaymentPage() {
           {deliveryMethod === 'stripe' && (
             <div className="flex items-center gap-2 justify-center text-[10px] text-amber-600 font-bold uppercase tracking-widest animate-pulse">
               <AlertCircle className="w-3 h-3" />
-              Live Mode Active: Transactions will move real currency
+              Live Mode Active: Transaction will move real currency
             </div>
           )}
         </div>
