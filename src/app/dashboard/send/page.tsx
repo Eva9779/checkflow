@@ -3,14 +3,14 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Building2, Sparkles, Send, Info, ShieldCheck, Loader2, Hash, MapPin, CreditCard, ReceiptText, AlertCircle } from 'lucide-react';
+import { Sparkles, Send, ShieldCheck, Loader2, Hash, CreditCard, ReceiptText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { aiMemoAssistant } from '@/ai/flows/ai-memo-assistant';
 import { useFirestore, useUser, useCollection } from '@/firebase';
@@ -78,23 +78,22 @@ export default function SendPaymentPage() {
     e.preventDefault();
     if (!db || !user) return;
     
-    // Basic Validation
     if (!formData.fromAccount) {
-      toast({ title: "Account Required", description: "Please select a source account to debit.", variant: "destructive" });
+      toast({ title: "Account Required", description: "Please select a source account.", variant: "destructive" });
       return;
     }
 
     if (formData.routingNumber.length !== 9) {
-      toast({ title: "Invalid Routing Number", description: "U.S. Routing numbers must be exactly 9 digits.", variant: "destructive" });
+      toast({ title: "Invalid Routing", description: "U.S. Routing numbers must be 9 digits.", variant: "destructive" });
       return;
     }
 
     setLoading(true);
     let stripeTxId = null;
 
-    // 1. Handle External Payment Gateway (Stripe)
-    if (deliveryMethod === 'stripe') {
-      try {
+    try {
+      // 1. Handle External Payment Gateway (Stripe)
+      if (deliveryMethod === 'stripe') {
         const stripeResult = await initiateStripeACHPayout({
           amount: parseFloat(formData.amount),
           currency: 'usd',
@@ -114,53 +113,54 @@ export default function SendPaymentPage() {
           return;
         }
         stripeTxId = stripeResult.id;
-      } catch (err: any) {
-        toast({ 
-          title: "System Error", 
-          description: "Could not connect to the payment processing server. Please try again.", 
-          variant: "destructive" 
-        });
-        setLoading(false);
-        return;
       }
-    }
 
-    // 2. Record Transaction in Database
-    const txData = {
-      type: 'sent',
-      recipientName: formData.recipientName,
-      recipientAddress: formData.recipientAddress,
-      amount: parseFloat(formData.amount),
-      memo: formData.memo || formData.purpose,
-      status: deliveryMethod === 'stripe' ? 'completed' : 'pending',
-      date: new Date().toISOString().split('T')[0],
-      checkNumber: deliveryMethod === 'print' ? formData.checkNumber : null,
-      fromAccountId: formData.fromAccount,
-      deliveryMethod,
-      stripeTransferId: stripeTxId,
-      createdAt: serverTimestamp()
-    };
+      // 2. Record Transaction in Database (Optimistic)
+      const txData = {
+        type: 'sent',
+        recipientName: formData.recipientName,
+        recipientAddress: formData.recipientAddress,
+        amount: parseFloat(formData.amount),
+        memo: formData.memo || formData.purpose,
+        status: deliveryMethod === 'stripe' ? 'completed' : 'pending',
+        date: new Date().toISOString().split('T')[0],
+        checkNumber: deliveryMethod === 'print' ? formData.checkNumber : null,
+        fromAccountId: formData.fromAccount,
+        deliveryMethod,
+        stripeTransferId: stripeTxId,
+        createdAt: serverTimestamp()
+      };
 
-    const txRef = collection(db, 'users', user.uid, 'transactions');
-    addDoc(txRef, txData)
-      .then(() => {
-        toast({ 
-          title: deliveryMethod === 'stripe' ? "ACH Payout Sent" : "E-Check Generated", 
-          description: deliveryMethod === 'stripe' 
-            ? `Real-world ACH transfer for $${formData.amount} initiated via Stripe.`
-            : `Check #${formData.checkNumber} for $${formData.amount} is ready for print.` 
+      const txRef = collection(db, 'users', user.uid, 'transactions');
+      
+      // Initiate background write
+      addDoc(txRef, txData)
+        .catch(async (error) => {
+          const permissionError = new FirestorePermissionError({
+            path: txRef.path,
+            operation: 'create',
+            requestResourceData: txData
+          });
+          errorEmitter.emit('permission-error', permissionError);
         });
-        router.push('/dashboard/history');
-      })
-      .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
-          path: txRef.path,
-          operation: 'create',
-          requestResourceData: txData
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setLoading(false);
+
+      toast({ 
+        title: deliveryMethod === 'stripe' ? "ACH Payout Sent" : "E-Check Generated", 
+        description: deliveryMethod === 'stripe' 
+          ? `Real-world ACH transfer for $${formData.amount} initiated.`
+          : `Check #${formData.checkNumber} is ready for print.` 
       });
+      
+      router.push('/dashboard/history');
+    } catch (err: any) {
+      toast({ 
+        title: "Processing Error", 
+        description: "An unexpected error occurred during payout execution.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

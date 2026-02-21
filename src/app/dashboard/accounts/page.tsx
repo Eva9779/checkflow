@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Building2, Plus, ShieldCheck, CheckCircle2, MoreVertical, Loader2, MapPin, Lock, AlertCircle } from 'lucide-react';
+import { Building2, Plus, ShieldCheck, CheckCircle2, MoreVertical, Loader2, MapPin, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useFirestore, useUser, useCollection } from '@/firebase';
@@ -38,79 +38,68 @@ export default function BankAccountsPage() {
     confirmAccountNumber: ''
   });
 
-  const handleAddAccount = async (e: React.FormEvent) => {
+  const handleAddAccount = (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !user) return;
     
+    if (newAccount.accountNumber !== newAccount.confirmAccountNumber) {
+      toast({ 
+        title: "Mismatched Accounts", 
+        description: "Account numbers do not match.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    if (newAccount.routingNumber.length !== 9) {
+      toast({ 
+        title: "Invalid Routing", 
+        description: "U.S. Routing numbers must be 9 digits.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setLoading(true);
 
-    try {
-      if (newAccount.accountNumber !== newAccount.confirmAccountNumber) {
-        toast({ 
-          title: "Mismatched Accounts", 
-          description: "Account numbers do not match. Please verify your entry.", 
-          variant: "destructive" 
-        });
-        setLoading(false);
-        return;
-      }
+    const accountData = {
+      bankName: newAccount.bankName,
+      bankAddress: newAccount.bankAddress,
+      routingNumber: newAccount.routingNumber,
+      fractionalRouting: newAccount.fractionalRouting,
+      accountNumber: `****${newAccount.accountNumber.slice(-4)}`,
+      isDefault: (accounts?.length || 0) === 0,
+      createdAt: serverTimestamp()
+    };
 
-      if (newAccount.routingNumber.length !== 9) {
-        toast({ 
-          title: "Invalid Routing", 
-          description: "U.S. Routing numbers must be exactly 9 digits.", 
-          variant: "destructive" 
+    const accountsRef = collection(db, 'users', user.uid, 'accounts');
+    
+    // Non-blocking mutation for optimistic UI
+    addDoc(accountsRef, accountData)
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: accountsRef.path,
+          operation: 'create',
+          requestResourceData: accountData
         });
-        setLoading(false);
-        return;
-      }
-
-      const accountData = {
-        bankName: newAccount.bankName,
-        bankAddress: newAccount.bankAddress,
-        routingNumber: newAccount.routingNumber,
-        fractionalRouting: newAccount.fractionalRouting,
-        accountNumber: `****${newAccount.accountNumber.slice(-4)}`,
-        fullAccountEncrypted: newAccount.accountNumber, // Securely stored in your private Firebase instance
-        isDefault: (accounts?.length || 0) === 0,
-        createdAt: serverTimestamp()
-      };
-
-      const accountsRef = collection(db, 'users', user.uid, 'accounts');
-      
-      await addDoc(accountsRef, accountData)
-        .then(() => {
-          toast({ 
-            title: "Account Linked", 
-            description: `${newAccount.bankName} successfully connected for payouts.` 
-          });
-          setOpen(false);
-          setNewAccount({ 
-            bankName: '', 
-            bankAddress: '', 
-            routingNumber: '', 
-            fractionalRouting: '', 
-            accountNumber: '', 
-            confirmAccountNumber: '' 
-          });
-        })
-        .catch(async (error) => {
-          const permissionError = new FirestorePermissionError({
-            path: accountsRef.path,
-            operation: 'create',
-            requestResourceData: accountData
-          });
-          errorEmitter.emit('permission-error', permissionError);
-        });
-    } catch (err: any) {
-      toast({
-        title: "Connection Error",
-        description: "Failed to link account. Please check your internet and try again.",
-        variant: "destructive"
+        errorEmitter.emit('permission-error', permissionError);
       });
-    } finally {
-      setLoading(false);
-    }
+
+    // Provide immediate UI feedback
+    toast({ 
+      title: "Account Linked", 
+      description: `${newAccount.bankName} has been securely connected.` 
+    });
+    setOpen(false);
+    setLoading(false);
+    setNewAccount({ 
+      bankName: '', 
+      bankAddress: '', 
+      routingNumber: '', 
+      fractionalRouting: '', 
+      accountNumber: '', 
+      confirmAccountNumber: '' 
+    });
   };
 
   const handleDeleteAccount = (id: string) => {
@@ -271,7 +260,7 @@ export default function BankAccountsPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                <CardTitle className="mt-4">{acc.bankName}</CardTitle>
+                <CardTitle className="mt-4 font-bold">{acc.bankName}</CardTitle>
                 <CardDescription className="text-xs truncate">{acc.bankAddress || 'No branch address provided'}</CardDescription>
               </CardHeader>
               <CardContent>
