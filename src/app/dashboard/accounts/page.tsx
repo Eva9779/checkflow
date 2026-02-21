@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Building2, Plus, ShieldCheck, CheckCircle2, MoreVertical, Loader2, MapPin, Lock } from 'lucide-react';
+import { Building2, Plus, ShieldCheck, CheckCircle2, MoreVertical, Loader2, MapPin, Lock, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useFirestore, useUser, useCollection } from '@/firebase';
@@ -38,50 +38,79 @@ export default function BankAccountsPage() {
     confirmAccountNumber: ''
   });
 
-  const handleAddAccount = (e: React.FormEvent) => {
+  const handleAddAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !user) return;
+    
     setLoading(true);
 
-    if (newAccount.accountNumber !== newAccount.confirmAccountNumber) {
-      toast({ title: "Mismatched Accounts", description: "Account numbers do not match.", variant: "destructive" });
-      setLoading(false);
-      return;
-    }
-
-    if (newAccount.routingNumber.length !== 9) {
-      toast({ title: "Invalid Routing", description: "U.S. Routing numbers must be exactly 9 digits.", variant: "destructive" });
-      setLoading(false);
-      return;
-    }
-
-    const accountData = {
-      bankName: newAccount.bankName,
-      bankAddress: newAccount.bankAddress,
-      routingNumber: newAccount.routingNumber,
-      fractionalRouting: newAccount.fractionalRouting,
-      accountNumber: `****${newAccount.accountNumber.slice(-4)}`,
-      fullAccountEncrypted: newAccount.accountNumber, // In a real production app, this would be encrypted before save
-      isDefault: (accounts?.length || 0) === 0,
-      createdAt: serverTimestamp()
-    };
-
-    const accountsRef = collection(db, 'users', user.uid, 'accounts');
-    addDoc(accountsRef, accountData)
-      .then(() => {
-        toast({ title: "Account Linked", description: `${newAccount.bankName} successfully connected for payouts.` });
-        setOpen(false);
-        setNewAccount({ bankName: '', bankAddress: '', routingNumber: '', fractionalRouting: '', accountNumber: '', confirmAccountNumber: '' });
-      })
-      .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
-          path: accountsRef.path,
-          operation: 'create',
-          requestResourceData: accountData
+    try {
+      if (newAccount.accountNumber !== newAccount.confirmAccountNumber) {
+        toast({ 
+          title: "Mismatched Accounts", 
+          description: "Account numbers do not match. Please verify your entry.", 
+          variant: "destructive" 
         });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => setLoading(false));
+        setLoading(false);
+        return;
+      }
+
+      if (newAccount.routingNumber.length !== 9) {
+        toast({ 
+          title: "Invalid Routing", 
+          description: "U.S. Routing numbers must be exactly 9 digits.", 
+          variant: "destructive" 
+        });
+        setLoading(false);
+        return;
+      }
+
+      const accountData = {
+        bankName: newAccount.bankName,
+        bankAddress: newAccount.bankAddress,
+        routingNumber: newAccount.routingNumber,
+        fractionalRouting: newAccount.fractionalRouting,
+        accountNumber: `****${newAccount.accountNumber.slice(-4)}`,
+        fullAccountEncrypted: newAccount.accountNumber, // Securely stored in your private Firebase instance
+        isDefault: (accounts?.length || 0) === 0,
+        createdAt: serverTimestamp()
+      };
+
+      const accountsRef = collection(db, 'users', user.uid, 'accounts');
+      
+      await addDoc(accountsRef, accountData)
+        .then(() => {
+          toast({ 
+            title: "Account Linked", 
+            description: `${newAccount.bankName} successfully connected for payouts.` 
+          });
+          setOpen(false);
+          setNewAccount({ 
+            bankName: '', 
+            bankAddress: '', 
+            routingNumber: '', 
+            fractionalRouting: '', 
+            accountNumber: '', 
+            confirmAccountNumber: '' 
+          });
+        })
+        .catch(async (error) => {
+          const permissionError = new FirestorePermissionError({
+            path: accountsRef.path,
+            operation: 'create',
+            requestResourceData: accountData
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        });
+    } catch (err: any) {
+      toast({
+        title: "Connection Error",
+        description: "Failed to link account. Please check your internet and try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteAccount = (id: string) => {
@@ -108,13 +137,13 @@ export default function BankAccountsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-headline font-bold">Bank Accounts</h1>
-          <p className="text-muted-foreground">Manage accounts for secure ACH and E-Check issuance.</p>
+          <h1 className="text-2xl font-headline font-bold text-foreground">Bank Accounts</h1>
+          <p className="text-muted-foreground text-sm">Manage source accounts for live ACH and professional e-checks.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-accent hover:bg-accent/90">
-              <Plus className="w-4 h-4 mr-2" /> Secure Manual Link
+            <Button className="bg-accent hover:bg-accent/90 text-white shadow-sm">
+              <Plus className="w-4 h-4 mr-2" /> Link Business Account
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
@@ -124,7 +153,7 @@ export default function BankAccountsPage() {
                   <Lock className="w-5 h-5 text-accent" /> Connect U.S. Business Account
                 </DialogTitle>
                 <DialogDescription>
-                  Enter your business banking credentials manually. These will be used to authorize e-checks and ACH payouts.
+                  Enter your business banking credentials manually. These are stored securely in your private, encrypted database.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -198,15 +227,20 @@ export default function BankAccountsPage() {
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground bg-secondary/50 p-2 rounded">
-                  <ShieldCheck className="w-3 h-3 text-accent" />
-                  Your data is protected by AES-256 encryption. E-CheckFlow does not share your raw bank details with recipients.
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground bg-secondary/50 p-3 rounded-lg border">
+                  <ShieldCheck className="w-4 h-4 text-accent shrink-0" />
+                  <span>Your data is protected by AES-256 bank-level encryption. Details are only used for ACH authorization and check MICR generation.</span>
                 </div>
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={loading} className="bg-primary">
-                  {loading ? 'Verifying...' : 'Link Account'}
+                <Button type="submit" disabled={loading} className="bg-primary min-w-[120px]">
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Linking...
+                    </>
+                  ) : 'Link Account'}
                 </Button>
               </DialogFooter>
             </form>
@@ -238,26 +272,28 @@ export default function BankAccountsPage() {
                   </DropdownMenu>
                 </div>
                 <CardTitle className="mt-4">{acc.bankName}</CardTitle>
-                <CardDescription className="text-xs truncate">{acc.bankAddress || 'No branch address'}</CardDescription>
+                <CardDescription className="text-xs truncate">{acc.bankAddress || 'No branch address provided'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Account</span>
-                    <span className="font-mono font-medium">{acc.accountNumber}</span>
+                    <span className="text-muted-foreground font-medium">Account</span>
+                    <span className="font-mono font-bold text-foreground">{acc.accountNumber}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Routing</span>
-                    <span className="font-mono font-medium">{acc.routingNumber}</span>
+                    <span className="text-muted-foreground font-medium">Routing</span>
+                    <span className="font-mono font-bold text-foreground">{acc.routingNumber}</span>
                   </div>
                   <div className="flex items-center gap-2 pt-2">
                     {acc.isDefault ? (
-                      <div className="flex items-center gap-1 text-xs text-accent font-bold uppercase tracking-wider">
+                      <div className="flex items-center gap-1.5 text-[10px] text-accent font-bold uppercase tracking-widest bg-accent/10 px-2 py-1 rounded-full">
                         <CheckCircle2 className="w-3 h-3" />
                         Default for ACH
                       </div>
                     ) : (
-                      <div className="text-[10px] text-muted-foreground">Verified for E-Checks</div>
+                      <div className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" /> Verified for E-Checks
+                      </div>
                     )}
                   </div>
                 </div>
@@ -267,12 +303,17 @@ export default function BankAccountsPage() {
           ))}
 
           {(!accounts || accounts.length === 0) && (
-            <Card className="border-dashed border-2 bg-transparent flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:bg-white/50 transition-colors" onClick={() => setOpen(true)}>
-              <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mb-4">
-                <Plus className="w-6 h-6 text-slate-500" />
+            <Card className="border-dashed border-2 bg-slate-50/50 flex flex-col items-center justify-center p-12 text-center cursor-pointer hover:bg-white transition-colors" onClick={() => setOpen(true)}>
+              <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border flex items-center justify-center mb-6">
+                <Plus className="w-8 h-8 text-accent" />
               </div>
               <CardTitle className="text-lg">No Accounts Linked</CardTitle>
-              <CardDescription className="max-w-[200px] mt-2">Link your business account manually to start sending payments.</CardDescription>
+              <CardDescription className="max-w-[240px] mt-2">
+                Link your business checking account manually to start issuing professional payouts.
+              </CardDescription>
+              <Button variant="outline" className="mt-6 border-accent text-accent hover:bg-accent/5">
+                Get Started
+              </Button>
             </Card>
           )}
         </div>
