@@ -1,4 +1,3 @@
-
 export interface BankAccount {
   id: string;
   bankName: string;
@@ -12,7 +11,7 @@ export interface BankAccount {
 
 export interface Transaction {
   id: string;
-  type: 'sent' | 'received' | 'requested';
+  type: 'sent';
   recipientName: string;
   recipientAddress?: string;
   amount: number;
@@ -22,7 +21,7 @@ export interface Transaction {
   checkNumber?: string;
   fromAccountId?: string;
   createdAt: any;
-  // Fulfilling a request
+  // Details for verification
   payerBankName?: string;
   payerRoutingNumber?: string;
   payerAccountNumber?: string;

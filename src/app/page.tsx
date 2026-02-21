@@ -14,10 +14,10 @@ export default function LandingPage() {
           <Link href="#features" className="text-sm font-medium hover:text-accent transition-colors">Features</Link>
           <Link href="#security" className="text-sm font-medium hover:text-accent transition-colors">Security</Link>
           <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary/10">
-            <Link href="/dashboard">Login</Link>
+            <Link href="/login">Login</Link>
           </Button>
           <Button asChild className="bg-accent hover:bg-accent/90">
-            <Link href="/dashboard">Get Started</Link>
+            <Link href="/login">Get Started</Link>
           </Button>
         </nav>
       </header>
@@ -25,17 +25,14 @@ export default function LandingPage() {
       <main className="flex-1">
         <section className="py-20 px-6 text-center max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-headline font-extrabold mb-6 text-foreground tracking-tight">
-            Seamless E-Check Payments for <span className="text-accent">Modern Business</span>
+            Seamless E-Check Payouts for <span className="text-accent">Modern Business</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-            The most intuitive way to send and receive e-checks using U.S. bank accounts. Secure, fast, and professional.
+            The most intuitive way to issue and send professional e-checks using U.S. bank accounts. Secure, fast, and compliant.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild className="h-14 px-8 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link href="/dashboard">Start Sending E-Checks</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild className="h-14 px-8 text-lg font-semibold">
-              <Link href="/dashboard">Request a Payment</Link>
+          <div className="flex justify-center">
+            <Button size="lg" asChild className="h-14 px-10 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link href="/login">Start Sending E-Checks</Link>
             </Button>
           </div>
         </section>
@@ -49,14 +46,14 @@ export default function LandingPage() {
                   <ArrowRightLeft className="w-8 h-8 text-accent" />
                 </div>
                 <h3 className="text-xl font-bold mb-4">Direct Bank Transfer</h3>
-                <p className="text-muted-foreground">Skip the card processing fees. Move funds directly between U.S. bank accounts with ease.</p>
+                <p className="text-muted-foreground">Skip the card processing fees. Issue payments directly from your U.S. business bank accounts.</p>
               </div>
               <div className="flex flex-col items-center text-center">
                 <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-6">
                   <Clock className="w-8 h-8 text-accent" />
                 </div>
                 <h3 className="text-xl font-bold mb-4">Fast Settlements</h3>
-                <p className="text-muted-foreground">Standardized e-check processing ensures your payments are tracked and settled reliably.</p>
+                <p className="text-muted-foreground">Standardized e-check processing ensures your payouts are tracked and settled reliably.</p>
               </div>
               <div className="flex flex-col items-center text-center">
                 <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-6">
@@ -74,10 +71,10 @@ export default function LandingPage() {
             <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 opacity-10">
               <Zap className="w-64 h-64" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-headline font-bold mb-6">Ready to streamline your finances?</h2>
-            <p className="text-lg opacity-90 mb-8 max-w-xl mx-auto">Join thousands of businesses already using E-CheckFlow to handle their B2B and B2C payments.</p>
+            <h2 className="text-3xl md:text-4xl font-headline font-bold mb-6">Ready to streamline your payouts?</h2>
+            <p className="text-lg opacity-90 mb-8 max-w-xl mx-auto">Join businesses using E-CheckFlow to handle their professional vendor and contractor payments.</p>
             <Button size="lg" asChild className="bg-accent text-white hover:bg-accent/90 h-14 px-10 text-lg">
-              <Link href="/dashboard">Create Free Account</Link>
+              <Link href="/login">Create Free Account</Link>
             </Button>
           </div>
         </section>
