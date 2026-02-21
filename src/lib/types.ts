@@ -20,6 +20,8 @@ export interface Transaction {
   date: string;
   checkNumber?: string;
   fromAccountId?: string;
+  deliveryMethod: 'print' | 'stripe';
+  stripeTransferId?: string;
   createdAt: any;
   // Details for verification
   payerBankName?: string;
