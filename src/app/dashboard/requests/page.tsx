@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -44,7 +43,6 @@ export default function RequestPaymentPage() {
 
     setLoading(true);
 
-    // 1. Generate IDs and URLs immediately for "Optimistic" UI
     const transactionsRef = collection(db, 'users', user.uid, 'transactions');
     const newTxRef = doc(transactionsRef);
     const txId = newTxRef.id;
@@ -52,10 +50,6 @@ export default function RequestPaymentPage() {
     const origin = window.location.origin;
     const url = `${origin}/pay/${txId}?u=${user.uid}`;
     
-    // 2. Show the QR code instantly
-    setRequestUrl(url);
-    setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`);
-
     const txData = {
       type: 'requested' as const,
       recipientName: user.displayName || user.email || 'Authorized Merchant',
@@ -68,23 +62,23 @@ export default function RequestPaymentPage() {
       payerTargetName: formData.payerName
     };
 
-    // 3. Save to Firestore in the background
-    setDoc(newTxRef, txData)
-      .then(() => {
-        toast({ title: "Payment Request Live" });
-      })
-      .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
-          path: newTxRef.path,
-          operation: 'create',
-          requestResourceData: txData
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        toast({ title: "Save Error", description: "The request link was generated but may not be saved. Check history.", variant: "destructive" });
-      })
-      .finally(() => {
-        setLoading(false);
+    // We await the write before showing the QR code to eliminate race conditions
+    try {
+      await setDoc(newTxRef, txData);
+      setRequestUrl(url);
+      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`);
+      toast({ title: "Payment Request Live" });
+    } catch (error: any) {
+      const permissionError = new FirestorePermissionError({
+        path: newTxRef.path,
+        operation: 'create',
+        requestResourceData: txData
       });
+      errorEmitter.emit('permission-error', permissionError);
+      toast({ title: "Save Error", description: "Could not create the request.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const copyToClipboard = () => {

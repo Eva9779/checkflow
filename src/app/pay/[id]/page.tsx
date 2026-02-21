@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use, useMemo, useState, useRef, useEffect } from 'react';
@@ -21,10 +20,10 @@ interface PublicPaymentPageProps {
 }
 
 export default function PublicPaymentPage({ params, searchParams }: PublicPaymentPageProps) {
-  const { id: rawId } = use(params);
+  const resolvedParams = use(params);
   const resolvedSearchParams = use(searchParams);
   
-  const id = useMemo(() => String(rawId || '').trim(), [rawId]);
+  const id = useMemo(() => String(resolvedParams.id || '').trim(), [resolvedParams.id]);
   
   const userId = useMemo(() => {
     const u = resolvedSearchParams.u;
@@ -157,8 +156,8 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
       .finally(() => setSubmitting(false));
   };
 
-  // 1. Initial Loading State (while connecting to Firestore)
-  if (loading && !transaction) {
+  // 1. Initial State: Waiting for parameters or Firestore connection
+  if (!id || !userId || (loading && !transaction)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center space-y-4">
@@ -169,7 +168,7 @@ export default function PublicPaymentPage({ params, searchParams }: PublicPaymen
     );
   }
 
-  // 2. Real Errors or Truly Not Found
+  // 2. Error States
   const isAccessDenied = error && error.message.toLowerCase().includes('permission');
   const isDocNotFound = !transaction && !loading;
 
