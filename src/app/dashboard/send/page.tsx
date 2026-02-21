@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Sparkles, Send, ShieldCheck, Loader2, CreditCard, ReceiptText, Info, Building2, MapPin } from 'lucide-react';
+import { Sparkles, Send, ShieldCheck, Loader2, CreditCard, ReceiptText, Info, Building2, MapPin, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { aiMemoAssistant } from '@/ai/flows/ai-memo-assistant';
 import { useFirestore, useUser, useCollection } from '@/firebase';
@@ -17,6 +17,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { initiateStripeACHPayout } from '@/app/actions/stripe-payout';
+import { SignaturePad } from '@/components/dashboard/signature-pad';
 
 export default function SendPaymentPage() {
   const router = useRouter();
@@ -34,6 +35,7 @@ export default function SendPaymentPage() {
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<'print' | 'stripe'>('print');
+  const [signatureData, setSignatureData] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     recipientName: '',
@@ -93,6 +95,15 @@ export default function SendPaymentPage() {
       return;
     }
 
+    if (deliveryMethod === 'print' && !signatureData) {
+      toast({ 
+        title: "Signature Required", 
+        description: "Please provide an authorized signature to issue this printable check.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setLoading(true);
     let stripeTxId = null;
 
@@ -144,6 +155,7 @@ export default function SendPaymentPage() {
         payerAccountNumber: `****${selectedAccount.accountNumber.slice(-4)}`,
         deliveryMethod,
         stripeTransferId: stripeTxId,
+        signatureData: deliveryMethod === 'print' ? signatureData : null,
         createdAt: serverTimestamp()
       };
 
@@ -314,6 +326,18 @@ export default function SendPaymentPage() {
                   <Input id="recipientAddress" placeholder="Street, City, State, Zip" value={formData.recipientAddress} onChange={e => setFormData({...formData, recipientAddress: e.target.value})} />
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-md overflow-hidden">
+            <CardHeader className="border-b bg-secondary/30">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-accent" /> Authorization
+              </CardTitle>
+              <CardDescription>Provide a digital signature to authorize this payout issuance.</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+              <SignaturePad onSave={(data) => setSignatureData(data)} onClear={() => setSignatureData(null)} />
             </CardContent>
           </Card>
 

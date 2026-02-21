@@ -7,6 +7,7 @@ import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Printer, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function PrintCheckPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -157,18 +158,27 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 <p className="font-bold text-sm leading-tight uppercase">{bankName}</p>
               </div>
               <div className="flex flex-col justify-end">
-                <div className="flex items-end gap-3 mb-4">
+                <div className="flex items-end gap-3 mb-2">
                   <span className="text-[10px] font-bold uppercase pb-1">Memo:</span>
                   <div className="flex-1 border-b-[1px] border-black pb-1 text-xs font-bold truncate">
                     {transaction.memo}
                   </div>
                 </div>
-                <div className="relative">
-                  <div className="border-b-[1px] border-black w-full mb-1"></div>
-                  <p className="text-[8px] text-center uppercase font-bold tracking-tighter opacity-70">
-                    Authorized Electronic Signature - Secure Verification Required
-                  </p>
+                <div className="relative h-12 w-full flex items-center justify-center">
+                  {transaction.signatureData ? (
+                    <img 
+                      src={transaction.signatureData} 
+                      alt="Authorized Signature" 
+                      className="max-h-full max-w-full object-contain mix-blend-multiply" 
+                    />
+                  ) : (
+                    <div className="italic text-[10px] text-muted-foreground">No signature captured</div>
+                  )}
+                  <div className="absolute bottom-0 left-0 right-0 border-b-[1px] border-black"></div>
                 </div>
+                <p className="text-[8px] text-center uppercase font-bold tracking-tighter opacity-70 mt-1">
+                  Authorized Electronic Signature - Secure Verification Required
+                </p>
               </div>
             </div>
 

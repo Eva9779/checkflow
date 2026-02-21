@@ -14,8 +14,8 @@ export interface Transaction {
   type: 'sent';
   recipientName: string;
   recipientAddress?: string;
-  recipientRouting?: string; // Added for ACH
-  recipientAccount?: string; // Added for ACH (Masked)
+  recipientRouting?: string;
+  recipientAccount?: string;
   amount: number;
   memo: string;
   status: 'completed' | 'pending' | 'failed';
@@ -24,8 +24,8 @@ export interface Transaction {
   fromAccountId?: string;
   deliveryMethod: 'print' | 'stripe';
   stripeTransferId?: string;
+  signatureData?: string; // Base64 encoded signature image
   createdAt: any;
-  // Details for verification
   payerBankName?: string;
   payerRoutingNumber?: string;
   payerAccountNumber?: string;
