@@ -50,13 +50,11 @@
     margin: 0;
   }
   
-  /* Strictly hide everything except the print-only check container */
   html, body {
     height: auto;
     overflow: visible !important;
   }
 
-  /* Aggressively hide the entire dashboard UI and all overlays */
   aside, 
   header, 
   [data-sidebar="trigger"],
@@ -129,12 +127,6 @@
   white-space: nowrap;
 }
 
-.check-container {
-  font-family: 'Inter', sans-serif;
-  color: black;
-}
-
-.font-mono-check {
-  font-family: 'Courier New', Courier, monospace;
-  font-weight: bold;
+.blue-ink {
+  filter: brightness(0) saturate(100%) invert(13%) sepia(95%) saturate(7483%) hue-rotate(241deg) brightness(91%) contrast(106%);
 }
