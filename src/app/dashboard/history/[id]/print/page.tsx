@@ -5,7 +5,7 @@ import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, ShieldCheck, Square, CheckSquare, Pencil, CheckCircle2, Lock } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2, ShieldCheck, CheckSquare, Pencil, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SignaturePad } from '@/components/dashboard/signature-pad';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -244,21 +244,21 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                   </div>
                 </div>
 
-                {isMobileDeposit && (
-                  <div className="flex items-start gap-3 bg-black/5 p-3 rounded">
-                    <CheckSquare className="w-5 h-5 text-black shrink-0" />
-                    <p className="text-[10px] font-bold uppercase leading-tight">
-                      For Mobile Deposit Only at <br/> {bankName}
-                    </p>
-                  </div>
-                )}
-
-                <div className="pt-4 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 border-[1.5px] border-black flex items-center justify-center bg-white">
+                <div className="pt-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 border-[1.5px] border-black flex items-center justify-center bg-white shrink-0 mt-0.5">
                       {isMobileDeposit && <div className="w-3 h-3 bg-black" />}
                     </div>
-                    <span className="text-[9px] font-bold uppercase text-black">Check here for mobile deposit</span>
+                    <div>
+                      <span className="text-[9px] font-bold uppercase text-black block mb-1 leading-none">
+                        Check here for mobile deposit
+                      </span>
+                      {isMobileDeposit && (
+                        <p className="text-[9px] font-bold uppercase leading-tight text-black bg-black/5 p-1.5 rounded">
+                          For Mobile Deposit Only at <br/> {bankName}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="border-t-[1.5px] border-black border-dashed pt-2">
