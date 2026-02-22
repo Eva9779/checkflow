@@ -170,7 +170,8 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
       <div className="check-print-container flex flex-col items-center gap-8">
         {/* Front of Check */}
-        <div className="check-wrapper relative border-[1.5px] border-black h-[3in] w-[8.125in] bg-[#E0F2FE] p-6 flex flex-col justify-between origin-top scale-[var(--check-scale)] shadow-md print:shadow-none overflow-hidden">
+        <div className="check-wrapper relative border-[1.5px] border-black h-[3in] w-[8.125in] bg-[#E0F2FE] p-6 flex flex-col origin-top scale-[var(--check-scale)] shadow-md print:shadow-none overflow-hidden">
+          {/* Top Section */}
           <div className="flex justify-between items-start">
             <div className="space-y-0.5">
               <p className="font-bold text-[14pt] uppercase tracking-tight leading-none text-black">{payerName}</p>
@@ -179,7 +180,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </p>
             </div>
             <div className="text-right flex flex-col items-end">
-              <p className="text-[14pt] font-bold font-mono leading-none mb-1 text-black">{checkNumber}</p>
+              <p className="text-[14pt] font-bold font-mono leading-none mb-2 text-black">{checkNumber}</p>
               <div className="flex items-center justify-end gap-2">
                 <span className="text-[10pt] uppercase font-bold text-black">Date:</span>
                 <div className="border-b-2 border-black min-w-[120px] text-center font-mono py-0.5 font-bold text-[12pt] text-black">
@@ -189,7 +190,8 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          <div className="space-y-4 py-2">
+          {/* Payee Section */}
+          <div className="mt-4">
             <div className="flex items-end gap-2">
               <div className="flex-1 flex flex-col gap-1">
                 <div className="flex items-end gap-2 border-b-2 border-black pb-1">
@@ -205,14 +207,15 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            <div className="flex items-end gap-2 border-b-2 border-black pb-1">
+            <div className="flex items-end gap-2 border-b-2 border-black pb-1 mt-3">
               <div className="italic text-[12pt] font-bold tracking-tight text-black flex-1">
                 {amountInWords(transaction.amount)}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-12 gap-4 items-end pt-4 pb-8">
+          {/* Bottom Data Grid - Moved up to avoid MICR overlap */}
+          <div className="grid grid-cols-12 gap-4 items-end mt-auto mb-10 pb-2">
             <div className="col-span-4">
               <p className="text-[7pt] font-bold uppercase tracking-widest text-black/60 mb-0.5">Financial Institution</p>
               <p className="font-bold text-[10pt] leading-tight uppercase text-black">{bankName}</p>
@@ -224,29 +227,30 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
             <div className="col-span-4 flex flex-col items-center">
-              <div className="h-12 w-full flex items-center justify-center relative">
+              <div className="h-10 w-full flex items-center justify-center relative">
                 {transaction.signatureData && (
                   <img 
                     src={transaction.signatureData} 
                     alt="Signature" 
-                    className="absolute bottom-1 max-h-[70px] max-w-full object-contain blue-ink" 
+                    className="absolute bottom-1 max-h-[60px] max-w-full object-contain blue-ink" 
                   />
                 )}
               </div>
               <div className="w-full border-b-2 border-black"></div>
-              <p className="text-[8pt] text-center uppercase font-bold tracking-tighter text-black/70 mt-1 leading-none">
+              <p className="text-[7pt] text-center uppercase font-bold tracking-tighter text-black/70 mt-1 leading-none">
                 Authorized Signature
               </p>
             </div>
           </div>
 
-          <div className="absolute bottom-4 left-0 w-full flex justify-center micr-line text-[14pt] tracking-[0.45em] text-black font-bold">
+          {/* MICR Line - Absolute bottom to guarantee zero overlap */}
+          <div className="absolute bottom-2 left-0 w-full flex justify-center micr-line text-[14pt] tracking-[0.45em] text-black font-bold">
               ⑈{checkNumber}⑈ ⑆{routingNumber}⑆ {accountNumber}⑈
           </div>
         </div>
 
         {/* Back of Check */}
-        <div className="check-wrapper relative border-[1.5px] border-black h-[3in] w-[8.125in] bg-[#E0F2FE] p-0 flex origin-top scale-[var(--check-scale)] print-page-break shadow-md print:shadow-none overflow-hidden">
+        <div className="check-wrapper relative border-[1.5px] border-black h-[3in] w-[8.125in] bg-[#E0F2FE] p-0 flex origin-top scale-[var(--check-scale)] shadow-md print:shadow-none overflow-hidden">
           <div className="flex-1 p-6 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center gap-4 text-black/15">
@@ -268,7 +272,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 <p className="text-[9pt] font-black uppercase tracking-[0.1em] text-black mb-1">Endorse Here</p>
                 
                 <div className="relative w-full">
-                  <div className="relative border-b-2 border-black w-full h-8 flex items-end justify-center">
+                  <div className="relative border-b-2 border-black w-full h-10 flex items-end justify-center">
                     {endorsementSignature && (
                       <img 
                         src={endorsementSignature} 
@@ -280,7 +284,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                   <div className="border-b-2 border-black w-full h-4"></div>
                 </div>
 
-                <div className="mt-2 space-y-2">
+                <div className="mt-3 space-y-2">
                   {isMobileDeposit && (
                     <div className="text-[8pt] font-bold uppercase leading-tight text-black p-1 bg-slate-50 border border-black/10 rounded-sm">
                       For Mobile Deposit Only <br/> 
@@ -292,7 +296,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 pt-1">
                     <div className="w-5 h-5 border-[3px] border-black flex items-center justify-center shrink-0 bg-white shadow-sm">
                       {isMobileDeposit && <Check className="w-4 h-4 text-black stroke-[4px]" />}
                     </div>
