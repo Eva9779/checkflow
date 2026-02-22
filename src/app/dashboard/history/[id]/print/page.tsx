@@ -107,7 +107,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      {/* Configuration UI - Hidden on Print */}
       <div className="max-w-5xl mx-auto no-print mb-8 space-y-6">
         <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border">
           <div className="space-y-1">
@@ -169,7 +168,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
         </Card>
       </div>
 
-      {/* Check Document - Visible on Print and Screen Preview */}
       <div className="check-print-container flex flex-col items-center gap-8">
         {/* Front of Check */}
         <div className="check-wrapper relative border-[1.5px] border-black h-[3in] w-[8.125in] bg-[#E0F2FE] p-6 flex flex-col justify-between origin-top scale-[var(--check-scale)] shadow-md print:shadow-none overflow-hidden">
@@ -229,7 +227,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                   <img 
                     src={transaction.signatureData} 
                     alt="Signature" 
-                    className="absolute bottom-1 max-h-[80px] max-w-full object-contain mix-blend-multiply blue-ink" 
+                    className="absolute bottom-1 max-h-[80px] max-w-full object-contain blue-ink" 
                   />
                 )}
               </div>
@@ -267,19 +265,19 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               <p className="text-[9pt] font-black uppercase tracking-[0.1em] text-black mb-1">Endorse Here</p>
               
               <div className="relative w-full">
-                <div className="relative border-b-2 border-black w-full h-6 flex items-end justify-center">
+                <div className="relative border-b-2 border-black w-full h-8 flex items-end justify-center">
                   {endorsementSignature && (
                     <img 
                       src={endorsementSignature} 
                       alt="Endorsement" 
-                      className="max-h-[60px] w-auto object-contain mix-blend-multiply absolute bottom-1 blue-ink" 
+                      className="max-h-[70px] w-auto object-contain absolute bottom-1 blue-ink" 
                     />
                   )}
                 </div>
-                <div className="border-b-2 border-black w-full h-3"></div>
+                <div className="border-b-2 border-black w-full h-4"></div>
               </div>
 
-              <div className="mt-1 space-y-1 flex-1">
+              <div className="mt-2 space-y-2 flex-1">
                 {isMobileDeposit && (
                   <div className="text-[8.5pt] font-bold uppercase leading-tight text-black p-1 bg-slate-50 border-2 border-black/10 rounded-sm">
                     For Mobile Deposit Only <br/> 
@@ -291,18 +289,18 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-5 h-5 border-[3px] border-black flex items-center justify-center shrink-0 bg-white shadow-sm">
-                    {isMobileDeposit && <Check className="w-4 h-4 text-black stroke-[4px]" />}
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-6 h-6 border-[3px] border-black flex items-center justify-center shrink-0 bg-white shadow-sm">
+                    {isMobileDeposit && <Check className="w-5 h-5 text-black stroke-[4px]" />}
                   </div>
-                  <span className="text-[8pt] font-black uppercase text-black leading-tight tracking-tight">
+                  <span className="text-[9pt] font-black uppercase text-black leading-tight tracking-tight">
                     Check here for mobile deposit
                   </span>
                 </div>
               </div>
               
-              <div className="mt-auto border-t-2 border-black/20 border-dashed pt-1">
-                <p className="text-[6.5pt] text-center font-black uppercase text-black/40">
+              <div className="mt-auto border-t-2 border-black/20 border-dashed pt-2">
+                <p className="text-[7pt] text-center font-black uppercase text-black/40">
                   DO NOT WRITE BELOW THIS LINE
                 </p>
               </div>
