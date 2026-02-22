@@ -5,7 +5,7 @@ import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, ShieldCheck, Pencil, Lock, Check, Download } from 'lucide-react';
+import { ArrowLeft, Loader2, ShieldCheck, Pencil, Lock, Check, Printer } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SignaturePad } from '@/components/dashboard/signature-pad';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -102,9 +102,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
   };
 
   const handlePrint = () => {
-    if (typeof window !== 'undefined') {
-      window.print();
-    }
+    window.print();
   };
 
   return (
@@ -127,7 +125,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               onClick={handlePrint} 
               className="bg-primary hover:bg-primary/90 text-white font-bold px-8 h-12 rounded-xl shadow-sm cursor-pointer relative z-50"
             >
-              <Download className="w-5 h-5 mr-2" /> Print for Bank Deposit
+              <Printer className="w-5 h-5 mr-2" /> Print for Bank Deposit
             </Button>
           </div>
         </div>
@@ -183,16 +181,16 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
           <div className="relative border-[1.5px] border-black h-[3in] w-[8.125in] bg-[#fcfdfe] p-5 print:border-[1.5px] flex flex-col justify-between mx-auto">
             <div className="flex justify-between items-start">
               <div className="space-y-0">
-                <p className="font-bold text-[8px] uppercase tracking-tight leading-none mb-1">{payerName}</p>
-                <div className="text-[7px] font-medium leading-tight max-w-[180px] uppercase opacity-70">
+                <p className="font-bold text-[7px] uppercase tracking-tight leading-none mb-1">{payerName}</p>
+                <div className="text-[6px] font-medium leading-tight max-w-[180px] uppercase opacity-70">
                   {payerAddress}
                 </div>
               </div>
               <div className="text-right flex flex-col items-end">
-                <p className="text-[9px] font-bold font-mono tracking-tighter leading-none mb-3">{checkNumber}</p>
+                <p className="text-[8px] font-bold font-mono tracking-tighter leading-none mb-3">{checkNumber}</p>
                 <div className="flex items-center justify-end gap-2">
                   <span className="text-[7px] uppercase font-bold">Date:</span>
-                  <div className="border-b border-black min-w-[80px] text-center font-mono py-0.5 font-bold text-[8px]">
+                  <div className="border-b border-black min-w-[80px] text-center font-mono py-0.5 font-bold text-[7px]">
                     {transaction.initiatedAt}
                   </div>
                 </div>
@@ -202,11 +200,11 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             <div className="space-y-3 mt-1">
               <div className="flex items-end gap-2 relative">
                 <span className="text-[7px] font-bold uppercase min-w-[60px] pb-1">Pay to the Order of:</span>
-                <div className="flex-1 border-b border-black pb-1 font-bold text-[9px] uppercase tracking-tight">
+                <div className="flex-1 border-b border-black pb-1 font-bold text-[8px] uppercase tracking-tight">
                   {payeeName}
                 </div>
                 <div className="relative flex items-center ml-2">
-                  <div className="border-[1.5px] border-black px-2 py-1 min-w-[100px] text-right font-mono text-[10px] bg-white font-bold flex items-center justify-between">
+                  <div className="border-[1.5px] border-black px-2 py-1 min-w-[100px] text-right font-mono text-[9px] bg-white font-bold flex items-center justify-between">
                     <span>$</span>
                     <span>{transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
@@ -214,7 +212,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
 
               <div className="flex items-end gap-2">
-                <div className="flex-1 border-b border-black pb-0.5 italic text-[8px] font-medium tracking-tight">
+                <div className="flex-1 border-b border-black pb-0.5 italic text-[7px] font-medium tracking-tight">
                   {amountInWords(transaction.amount)}
                 </div>
               </div>
@@ -248,7 +246,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            <div className="absolute bottom-3 left-0 w-full flex justify-center micr-line text-[10px] tracking-[0.4em] text-black font-medium">
+            <div className="absolute bottom-3 left-0 w-full flex justify-center micr-line text-[9px] tracking-[0.4em] text-black font-medium">
                ⑈{checkNumber}⑈ ⑆{routingNumber}⑆ {accountNumber}⑈
             </div>
           </div>
@@ -291,19 +289,19 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               <div className="relative h-full flex flex-col">
                 <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-black mb-4">Endorse Here</p>
                 
-                <div className="relative w-full mb-3">
+                <div className="relative w-full mb-3 space-y-0">
                   {/* Endorsement Lines */}
-                  <div className="relative border-b border-black w-full h-8 flex items-end justify-center">
+                  <div className="relative border-b border-black w-full h-8 flex items-center justify-center">
                     {endorsementSignature && (
                       <img 
                         src={endorsementSignature} 
                         alt="Endorsement" 
-                        className="max-h-[32px] w-auto object-contain mix-blend-multiply mb-[-1px] absolute top-[-10px]" 
+                        className="max-h-[30px] w-auto object-contain mix-blend-multiply absolute -bottom-[1px]" 
                       />
                     )}
                   </div>
-                  <div className="border-b border-black w-full h-7"></div>
-                  <div className="border-b border-black w-full h-7"></div>
+                  <div className="border-b border-black w-full h-8"></div>
+                  <div className="border-b border-black w-full h-8"></div>
                 </div>
 
                 <div className="mt-1 space-y-3">
