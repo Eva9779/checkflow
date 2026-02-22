@@ -38,7 +38,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   const { data: account, isLoading: accLoading } = useDoc<BankAccount>(accountRef);
 
-  // Initialize bank name once from account but allow user to clear it
   useEffect(() => {
     if (account?.bankName && !hasInitializedBank) {
       setDepositBankName(account.bankName);
@@ -118,7 +117,10 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             </Button>
             <h2 className="text-xl font-headline font-bold px-2">E-Check Verification</h2>
           </div>
-          <Button onClick={handlePrint} className="bg-accent hover:bg-accent/90 text-white font-bold px-8 h-12 rounded-xl shadow-sm">
+          <Button 
+            onClick={handlePrint} 
+            className="bg-accent hover:bg-accent/90 text-white font-bold px-8 h-12 rounded-xl shadow-sm cursor-pointer"
+          >
             <Printer className="w-5 h-5 mr-2" /> Print for Bank Deposit
           </Button>
         </div>
@@ -129,7 +131,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               <Pencil className="w-5 h-5 text-accent" /> Endorsement Preparation
             </CardTitle>
             <CardDescription className="text-sm">
-              Prepare the back of the check for mobile or physical deposit by signing below.
+              Prepare the back of the check for mobile or physical deposit.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-8 space-y-8">
@@ -174,30 +176,30 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
           <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#fcfdfe] p-6 print:border-[1.5px] flex flex-col justify-between">
             <div className="flex justify-between items-start">
               <div className="space-y-0.5">
-                <p className="font-bold text-sm uppercase tracking-tight leading-none mb-1">{payerName}</p>
-                <div className="text-[8px] font-medium leading-tight max-w-[250px] uppercase opacity-70">
+                <p className="font-bold text-[11px] uppercase tracking-tight leading-none mb-1">{payerName}</p>
+                <div className="text-[8px] font-medium leading-tight max-w-[200px] uppercase opacity-70">
                   {payerAddress}
                 </div>
               </div>
               <div className="text-right flex flex-col items-end">
-                <p className="text-base font-bold font-mono tracking-tighter leading-none mb-4">{checkNumber}</p>
+                <p className="text-[14px] font-bold font-mono tracking-tighter leading-none mb-4">{checkNumber}</p>
                 <div className="flex items-center justify-end gap-2">
-                  <span className="text-[10px] uppercase font-bold">Date:</span>
-                  <div className="border-b border-black min-w-[120px] text-center font-mono py-0.5 font-bold text-sm">
+                  <span className="text-[9px] uppercase font-bold">Date:</span>
+                  <div className="border-b border-black min-w-[100px] text-center font-mono py-0.5 font-bold text-[11px]">
                     {transaction.initiatedAt}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="flex items-end gap-3 relative">
-                <span className="text-[9px] font-bold uppercase min-w-[90px] pb-1">Pay to the Order of:</span>
-                <div className="flex-1 border-b border-black pb-1 font-bold text-sm uppercase tracking-tight">
+                <span className="text-[8px] font-bold uppercase min-w-[70px] pb-1">Pay to the Order of:</span>
+                <div className="flex-1 border-b border-black pb-1 font-bold text-[11px] uppercase tracking-tight">
                   {payeeName}
                 </div>
                 <div className="relative flex items-center ml-2">
-                  <div className="border-[2.5px] border-black px-4 py-1.5 min-w-[140px] text-right font-mono text-base bg-white font-bold flex items-center justify-between">
+                  <div className="border-[2px] border-black px-3 py-1 min-w-[120px] text-right font-mono text-[13px] bg-white font-bold flex items-center justify-between">
                     <span>$</span>
                     <span>{transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
@@ -205,7 +207,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
 
               <div className="flex items-end gap-2">
-                <div className="flex-1 border-b border-black pb-0.5 italic text-[12px] font-medium tracking-tight">
+                <div className="flex-1 border-b border-black pb-0.5 italic text-[10px] font-medium tracking-tight">
                   {amountInWords(transaction.amount)}
                 </div>
               </div>
@@ -213,33 +215,33 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
             <div className="grid grid-cols-12 gap-8 items-end pb-8">
               <div className="col-span-4">
-                <p className="text-[8px] font-bold uppercase tracking-widest opacity-60 mb-0.5">Financial Institution</p>
-                <p className="font-bold text-[9px] leading-tight uppercase">{bankName}</p>
+                <p className="text-[7px] font-bold uppercase tracking-widest opacity-60 mb-0.5">Financial Institution</p>
+                <p className="font-bold text-[8px] leading-tight uppercase">{bankName}</p>
               </div>
               <div className="col-span-4 flex items-end">
-                <span className="text-[9px] font-bold uppercase pb-1 mr-2">Memo:</span>
-                <div className="flex-1 border-b border-black pb-1 text-[9px] font-medium truncate">
+                <span className="text-[8px] font-bold uppercase pb-1 mr-2">Memo:</span>
+                <div className="flex-1 border-b border-black pb-1 text-[8px] font-medium truncate">
                   {transaction.memo}
                 </div>
               </div>
               <div className="col-span-4 flex flex-col items-center">
-                <div className="h-10 w-full flex items-center justify-center relative">
+                <div className="h-8 w-full flex items-center justify-center relative">
                   {transaction.signatureData && (
                     <img 
                       src={transaction.signatureData} 
                       alt="Authorized Signature" 
-                      className="absolute bottom-1 max-h-[40px] max-w-full object-contain mix-blend-multiply" 
+                      className="absolute bottom-1 max-h-[35px] max-w-full object-contain mix-blend-multiply" 
                     />
                   )}
                 </div>
                 <div className="w-full border-b border-black"></div>
-                <p className="text-[7px] text-center uppercase font-bold tracking-tighter opacity-70 mt-1 leading-none">
+                <p className="text-[6px] text-center uppercase font-bold tracking-tighter opacity-70 mt-1 leading-none">
                   Authorized Signature
                 </p>
               </div>
             </div>
 
-            <div className="absolute bottom-4 left-0 w-full flex justify-center micr-line text-[16px] tracking-[0.45em] text-black font-medium">
+            <div className="absolute bottom-4 left-0 w-full flex justify-center micr-line text-[14px] tracking-[0.45em] text-black font-medium">
                ⑈{checkNumber}⑈ ⑆{routingNumber}⑆ {accountNumber}⑈
             </div>
           </div>
@@ -248,23 +250,22 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
         {/* Back Side */}
         <div className="bg-white shadow-lg check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0 print-page-break">
           <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#fcfdfe] p-0 rounded-sm overflow-hidden flex">
-            {/* Left Content Area (Security & Instructions) */}
             <div className="flex-1 p-8 flex flex-col justify-between">
               <div className="space-y-6">
-                <div className="flex items-center gap-4 text-black/20">
-                  <ShieldCheck className="w-10 h-10" />
+                <div className="flex items-center gap-4 text-black/10">
+                  <ShieldCheck className="w-8 h-8" />
                   <div className="flex flex-col">
-                    <span className="text-[10px] uppercase font-bold tracking-[0.2em]">Verified Secure E-Check</span>
-                    <span className="text-[8px] font-medium">Standard U.S. Check 21 Processing Compliant</span>
+                    <span className="text-[8px] uppercase font-bold tracking-[0.2em]">Verified Secure E-Check</span>
+                    <span className="text-[7px] font-medium">U.S. Check 21 Processing Compliant</span>
                   </div>
                 </div>
                 
-                <Card className="bg-white/20 border-black/5 shadow-none w-48">
-                  <CardContent className="p-2.5">
-                    <p className="text-[8px] font-bold uppercase text-black/40 mb-2 border-b border-black/5 pb-1 flex items-center gap-2">
-                      <Lock className="w-2.5 h-2.5" /> Security Features
+                <Card className="bg-white/20 border-black/5 shadow-none w-40">
+                  <CardContent className="p-2">
+                    <p className="text-[7px] font-bold uppercase text-black/40 mb-2 border-b border-black/5 pb-1 flex items-center gap-1.5">
+                      <Lock className="w-2 h-2" /> Security Features
                     </p>
-                    <ul className="text-[7px] uppercase font-bold space-y-1 text-black/40">
+                    <ul className="text-[6px] uppercase font-bold space-y-0.5 text-black/40">
                       <li>• Microprint Signature Line</li>
                       <li>• Unique Verification Code</li>
                       <li>• Fraud Protection Surface</li>
@@ -274,51 +275,47 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 </Card>
               </div>
 
-              {/* Watermark */}
               <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none rotate-[-30deg] select-none">
-                <span className="text-[4rem] font-bold uppercase tracking-[0.3em]">Original Document</span>
+                <span className="text-[3rem] font-bold uppercase tracking-[0.3em]">Original Document</span>
               </div>
             </div>
 
-            {/* Endorsement Area (Trailing Edge) */}
+            {/* Endorsement Area */}
             <div className="w-[3.2in] h-full border-l-[1.5px] border-black/10 bg-white p-6">
               <div className="relative h-full flex flex-col">
-                <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-black mb-10">Endorse Here</p>
+                <p className="text-[8px] font-bold uppercase tracking-[0.1em] text-black mb-8">Endorse Here</p>
                 
-                {/* 3 Standard Signature Lines */}
                 <div className="relative w-full space-y-8 mb-6">
-                  {/* Line 1 - Primary Endorsement Line */}
-                  <div className="relative border-b border-black w-full h-6">
+                  {/* Line 1 - Signature sits on top line */}
+                  <div className="relative border-b border-black w-full h-4">
                     {endorsementSignature && (
                       <div className="absolute bottom-[-2px] left-0 w-full flex justify-center pointer-events-none">
                         <img 
                           src={endorsementSignature} 
                           alt="Endorsement" 
-                          className="max-h-[50px] w-auto object-contain mix-blend-multiply" 
+                          className="max-h-[40px] w-auto object-contain mix-blend-multiply" 
                         />
                       </div>
                     )}
                   </div>
-                  <div className="border-b border-black w-full h-6"></div>
-                  <div className="border-b border-black w-full h-6"></div>
+                  <div className="border-b border-black w-full h-4"></div>
+                  <div className="border-b border-black w-full h-4"></div>
                 </div>
 
                 <div className="mt-4 space-y-3">
-                  {/* Mobile Deposit Endorsement Text */}
                   {isMobileDeposit && (
-                    <div className="text-[9px] font-bold uppercase leading-tight text-black p-2 bg-[#f0f9ff] border border-accent/20 rounded">
+                    <div className="text-[8px] font-bold uppercase leading-tight text-black p-1.5 bg-[#f0f9ff] border border-accent/20 rounded">
                       For Mobile Deposit Only <br/> 
                       {depositBankName && (
-                        <span className="text-[10px] text-accent tracking-tight mt-0.5 block font-bold">
+                        <span className="text-[9px] text-accent tracking-tight mt-0.5 block font-bold">
                           at {depositBankName}
                         </span>
                       )}
                     </div>
                   )}
 
-                  {/* Single Mobile Deposit Checkbox */}
                   <div className="flex items-center gap-2 pt-2">
-                    <div className="w-5 h-5 border-[1.5px] border-black flex items-center justify-center shrink-0 bg-white">
+                    <div className="w-5 h-5 border-[2px] border-black flex items-center justify-center shrink-0 bg-white">
                       {isMobileDeposit && <Check className="w-4 h-4 text-black stroke-[4px]" />}
                     </div>
                     <span className="text-[8px] font-bold uppercase text-black leading-tight tracking-tight">
@@ -327,12 +324,10 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                   </div>
                 </div>
                 
-                {/* Footer Notice */}
-                <div className="mt-auto border-t-[1.5px] border-black border-dashed pt-3">
-                  <p className="text-[9px] text-center font-bold uppercase text-black leading-none tracking-tighter">
+                <div className="mt-auto border-t-[1px] border-black border-dashed pt-3">
+                  <p className="text-[8px] text-center font-bold uppercase text-black leading-none tracking-tighter">
                     DO NOT WRITE BELOW THIS LINE
                   </p>
-                  <p className="text-[6px] text-center uppercase opacity-30 mt-1 font-medium tracking-tight">Financial Institution Use Only</p>
                 </div>
               </div>
             </div>
