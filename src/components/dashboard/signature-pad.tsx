@@ -24,12 +24,16 @@ export function SignaturePad({ onSave, onClear }: SignaturePadProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 2;
+    // Use Blue Ink (#0000ED)
+    ctx.strokeStyle = '#0000ED';
+    ctx.fillStyle = '#0000ED';
+    ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     
     if (mode === 'type' && typedName) {
       clearCanvas(false);
+      ctx.fillStyle = '#0000ED';
       ctx.font = 'italic 48px "Dancing Script", cursive';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
