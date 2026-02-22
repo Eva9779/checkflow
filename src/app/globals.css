@@ -64,7 +64,8 @@
     border: none !important;
     margin: 0 !important;
     padding: 0.5in !important;
-    width: 100% !important;
+    width: 8.5in !important;
+    height: auto !important;
     background: white !important;
     overflow: visible !important;
   }
