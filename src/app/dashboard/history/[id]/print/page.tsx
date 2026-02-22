@@ -277,7 +277,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 <div className="border-b-2 border-black w-full h-4"></div>
               </div>
 
-              <div className="mt-2 space-y-2 flex-1">
+              <div className="mt-1 space-y-1 flex-1">
                 {isMobileDeposit && (
                   <div className="text-[8.5pt] font-bold uppercase leading-tight text-black p-1 bg-slate-50 border-2 border-black/10 rounded-sm">
                     For Mobile Deposit Only <br/> 
@@ -289,9 +289,9 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="w-6 h-6 border-[3px] border-black flex items-center justify-center shrink-0 bg-white shadow-sm">
-                    {isMobileDeposit && <Check className="w-5 h-5 text-black stroke-[4px]" />}
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="w-5 h-5 border-[3px] border-black flex items-center justify-center shrink-0 bg-white shadow-sm">
+                    {isMobileDeposit && <Check className="w-4 h-4 text-black stroke-[4px]" />}
                   </div>
                   <span className="text-[9pt] font-black uppercase text-black leading-tight tracking-tight">
                     Check here for mobile deposit
@@ -299,7 +299,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
               
-              <div className="mt-auto border-t-2 border-black/20 border-dashed pt-2">
+              <div className="mt-auto border-t-2 border-black/20 border-dashed pt-1">
                 <p className="text-[7pt] text-center font-black uppercase text-black/40">
                   DO NOT WRITE BELOW THIS LINE
                 </p>
