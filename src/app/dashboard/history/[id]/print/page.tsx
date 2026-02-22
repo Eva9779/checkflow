@@ -182,12 +182,12 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            <div className="absolute bottom-[1.0in] left-8">
+            <div className="absolute bottom-[1.2in] left-8">
                <p className="text-[8px] font-bold uppercase tracking-widest opacity-60">Financial Institution</p>
                <p className="font-bold text-[13px] leading-tight uppercase">{bankName}</p>
             </div>
 
-            <div className="absolute bottom-[0.9in] right-8 left-[3in] flex items-end gap-8">
+            <div className="absolute bottom-[1.1in] right-8 left-[3in] flex items-end gap-8">
               <div className="flex-1 flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase pb-0.5">Memo:</span>
                 <div className="flex-1 border-b-[1.5px] border-black pb-0.5 text-xs font-bold truncate">
@@ -217,7 +217,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        {/* Back Side - Refined for Real U.S. Bank Standard */}
+        {/* Back Side */}
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0 print-page-break">
           <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-0 rounded-sm overflow-hidden">
             {/* Endorsement Area - Standard Side Layout */}
@@ -225,8 +225,9 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               <div className="space-y-6">
                 <div className="relative">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Endorse Here</p>
-                  {/* Endorsement Signature Overlay */}
-                  <div className="absolute top-6 left-0 w-full h-32 pointer-events-none flex items-center justify-center z-10">
+                  
+                  {/* Endorsement Signature Overlay - Positioned exactly on the top line */}
+                  <div className="absolute top-0 left-0 w-full h-16 pointer-events-none flex items-end justify-center z-10">
                     {endorsementSignature && (
                       <img 
                         src={endorsementSignature} 
