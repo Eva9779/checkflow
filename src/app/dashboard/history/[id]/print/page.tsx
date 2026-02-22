@@ -262,13 +262,11 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          {/* Endorsement section with tight vertical spacing to fix alignment */}
           <div className="w-[3.25in] h-full border-l-[2px] border-black/30 bg-white p-3">
             <div className="relative h-full flex flex-col">
               <p className="text-[9pt] font-black uppercase tracking-[0.1em] text-black mb-1">Endorse Here</p>
               
               <div className="relative w-full">
-                {/* Fixed height signature area anchored to top line */}
                 <div className="relative border-b-2 border-black w-full h-8 flex items-end justify-center">
                   {endorsementSignature && (
                     <img 
