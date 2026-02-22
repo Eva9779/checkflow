@@ -168,75 +168,75 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
       <div className="max-w-[8.5in] mx-auto space-y-12 pb-20">
         {/* Front Side */}
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0">
-          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-8 print:border-[1.5px] flex flex-col justify-between">
+          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f8fbfe] p-6 print:border-[1.5px] flex flex-col justify-between">
             <div className="flex justify-between items-start">
               <div className="space-y-0.5">
-                <p className="font-black text-xl uppercase tracking-tight leading-none mb-1">{payerName}</p>
-                <div className="text-[10px] font-bold leading-tight max-w-[320px] uppercase opacity-80">
+                <p className="font-bold text-lg uppercase tracking-tight leading-none mb-1">{payerName}</p>
+                <div className="text-[9px] font-medium leading-tight max-w-[300px] uppercase opacity-80">
                   {payerAddress}
                 </div>
               </div>
               <div className="text-right flex flex-col items-end">
-                <p className="text-2xl font-black font-mono tracking-tighter leading-none mb-4">{checkNumber}</p>
+                <p className="text-xl font-bold font-mono tracking-tighter leading-none mb-4">{checkNumber}</p>
                 <div className="flex items-center justify-end gap-2">
-                  <span className="text-[11px] uppercase font-black">Date:</span>
-                  <div className="border-b-[2px] border-black min-w-[160px] text-center font-mono py-1 font-black text-xl">
+                  <span className="text-[10px] uppercase font-bold">Date:</span>
+                  <div className="border-b border-black min-w-[140px] text-center font-mono py-1 font-bold text-sm">
                     {transaction.initiatedAt}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-10">
-              <div className="flex items-end gap-4">
-                <span className="text-[11px] font-black uppercase min-w-[120px] pb-1">Pay to the Order of:</span>
-                <div className="flex-1 border-b-[2px] border-black pb-1 font-black text-3xl uppercase tracking-tight">
+            <div className="space-y-8">
+              <div className="flex items-end gap-4 relative">
+                <span className="text-[10px] font-bold uppercase min-w-[100px] pb-1">Pay to the Order of:</span>
+                <div className="flex-1 border-b border-black pb-1 font-bold text-xl uppercase tracking-tight">
                   {payeeName}
                 </div>
                 <div className="relative flex items-center ml-4">
-                  <span className="absolute left-2 font-black text-xl">$</span>
-                  <div className="border-[3px] border-black px-6 py-3 min-w-[180px] text-right font-mono text-3xl bg-white font-black">
+                  <span className="absolute left-1.5 font-bold text-lg">$</span>
+                  <div className="border-[2px] border-black px-4 py-2 min-w-[150px] text-right font-mono text-xl bg-white font-bold">
                     {transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>
 
               <div className="flex items-end gap-2">
-                <div className="flex-1 border-b-[2.5px] border-black pb-1 italic text-[18px] font-black tracking-tight">
+                <div className="flex-1 border-b border-black pb-1 italic text-[14px] font-medium tracking-tight">
                   {amountInWords(transaction.amount)}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-12 gap-8 items-end pb-12">
+            <div className="grid grid-cols-12 gap-8 items-end pb-8">
               <div className="col-span-4">
-                <p className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-1">Financial Institution</p>
-                <p className="font-black text-[14px] leading-tight uppercase">{bankName}</p>
+                <p className="text-[8px] font-bold uppercase tracking-widest opacity-60 mb-0.5">Financial Institution</p>
+                <p className="font-bold text-[12px] leading-tight uppercase">{bankName}</p>
               </div>
               <div className="col-span-4 flex items-end">
-                <span className="text-[11px] font-black uppercase pb-1 mr-3">Memo:</span>
-                <div className="flex-1 border-b-[2px] border-black pb-1 text-sm font-black truncate">
+                <span className="text-[10px] font-bold uppercase pb-1 mr-2">Memo:</span>
+                <div className="flex-1 border-b border-black pb-1 text-xs font-medium truncate">
                   {transaction.memo}
                 </div>
               </div>
               <div className="col-span-4 flex flex-col items-center">
-                <div className="h-16 w-full flex items-center justify-center relative">
+                <div className="h-12 w-full flex items-center justify-center relative">
                   {transaction.signatureData && (
                     <img 
                       src={transaction.signatureData} 
                       alt="Authorized Signature" 
-                      className="absolute bottom-1 max-h-[80px] max-w-full object-contain mix-blend-multiply" 
+                      className="absolute bottom-1 max-h-[60px] max-w-full object-contain mix-blend-multiply" 
                     />
                   )}
                 </div>
-                <div className="w-full border-b-[2px] border-black"></div>
-                <p className="text-[9px] text-center uppercase font-black tracking-tighter opacity-70 mt-1.5">
+                <div className="w-full border-b border-black"></div>
+                <p className="text-[8px] text-center uppercase font-bold tracking-tighter opacity-70 mt-1">
                   Authorized Signature
                 </p>
               </div>
             </div>
 
-            <div className="absolute bottom-6 left-0 w-full flex justify-center micr-line text-[24px] tracking-[0.45em] text-black font-bold">
+            <div className="absolute bottom-4 left-0 w-full flex justify-center micr-line text-[20px] tracking-[0.45em] text-black font-medium">
                ⑈{checkNumber}⑈ ⑆{routingNumber}⑆ {accountNumber}⑈
             </div>
           </div>
@@ -244,94 +244,92 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
         {/* Back Side */}
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0 print-page-break">
-          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-0 rounded-sm overflow-hidden flex">
-            {/* Left Content Area */}
-            <div className="flex-1 p-10 flex flex-col justify-between">
-              <div className="space-y-8">
+          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f8fbfe] p-0 rounded-sm overflow-hidden flex">
+            {/* Left Content Area (Security & Instructions) */}
+            <div className="flex-1 p-8 flex flex-col justify-between">
+              <div className="space-y-6">
                 <div className="flex items-center gap-4 text-black/40">
-                  <ShieldCheck className="w-16 h-16" />
+                  <ShieldCheck className="w-12 h-12" />
                   <div className="flex flex-col">
-                    <span className="text-[18px] uppercase font-black tracking-[0.25em]">Verified Secure E-Check</span>
-                    <span className="text-[12px] font-bold">Standard U.S. Check 21 Processing Compliant</span>
+                    <span className="text-[14px] uppercase font-bold tracking-[0.2em]">Verified Secure E-Check</span>
+                    <span className="text-[10px] font-medium">Standard U.S. Check 21 Processing Compliant</span>
                   </div>
                 </div>
                 
-                <Card className="bg-white/40 border-black/20 shadow-none w-80">
-                  <CardContent className="p-6">
-                    <p className="text-[12px] font-black uppercase text-black/60 mb-4 border-b border-black/10 pb-2 flex items-center gap-2">
-                      <Lock className="w-4 h-4" /> Security Features
+                <Card className="bg-white/40 border-black/10 shadow-none w-64">
+                  <CardContent className="p-4">
+                    <p className="text-[10px] font-bold uppercase text-black/50 mb-3 border-b border-black/5 pb-1 flex items-center gap-2">
+                      <Lock className="w-3 h-3" /> Security Features
                     </p>
-                    <ul className="text-[11px] uppercase font-black space-y-4 text-black/70">
+                    <ul className="text-[9px] uppercase font-bold space-y-2 text-black/60">
                       <li>• Microprint Signature Line</li>
-                      <li>• Unique Check Verification Code</li>
-                      <li>• Digital Fraud Protection Surface</li>
-                      <li>• High-Resolution MICR Scanning Support</li>
+                      <li>• Unique Verification Code</li>
+                      <li>• Fraud Protection Surface</li>
+                      <li>• MICR Scanning Support</li>
                     </ul>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Watermark Background */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none rotate-[-35deg] select-none">
-                <span className="text-[10rem] font-black uppercase tracking-[0.4em]">Original Document</span>
+              {/* Watermark */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none rotate-[-30deg] select-none">
+                <span className="text-[8rem] font-bold uppercase tracking-[0.3em]">Original Document</span>
               </div>
             </div>
 
-            {/* Endorsement Area Column */}
-            <div className="w-[3.5in] h-full border-l-[4px] border-black/10 bg-white p-8">
+            {/* Endorsement Area (Trailing Edge) */}
+            <div className="w-[3.2in] h-full border-l-[2px] border-black/10 bg-white p-6">
               <div className="relative h-full flex flex-col">
-                <p className="text-[14px] font-black uppercase tracking-[0.15em] text-black mb-12">Endorse Here</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-black mb-10">Endorse Here</p>
                 
-                {/* Signature Lines Container */}
-                <div className="relative w-full space-y-12 mb-8">
-                  {/* Line 1 - Signature target */}
-                  <div className="relative border-b-[3px] border-black w-full h-8">
+                {/* 3 Standard Signature Lines */}
+                <div className="relative w-full space-y-8 mb-6">
+                  {/* Line 1 - Primary Endorsement Line */}
+                  <div className="relative border-b border-black w-full h-6">
                     {endorsementSignature && (
-                      <div className="absolute bottom-[-10px] left-0 w-full flex justify-center pointer-events-none">
+                      <div className="absolute bottom-[-5px] left-0 w-full flex justify-center pointer-events-none">
                         <img 
                           src={endorsementSignature} 
-                          alt="Endorsement Signature" 
-                          className="max-h-[100px] w-auto object-contain mix-blend-multiply scale-125" 
+                          alt="Endorsement" 
+                          className="max-h-[70px] w-auto object-contain mix-blend-multiply scale-110" 
                         />
                       </div>
                     )}
                   </div>
-                  {/* Line 2 */}
-                  <div className="border-b-[3px] border-black w-full h-8"></div>
-                  {/* Line 3 */}
-                  <div className="border-b-[3px] border-black w-full h-8"></div>
+                  <div className="border-b border-black w-full h-6"></div>
+                  <div className="border-b border-black w-full h-6"></div>
                 </div>
 
-                <div className="mt-8 space-y-6">
-                  {/* Mobile Deposit Section */}
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 border-[5px] border-black bg-white flex items-center justify-center shrink-0 shadow-sm">
-                      {isMobileDeposit && <Check className="w-10 h-10 text-black stroke-[8px]" />}
-                    </div>
-                    <div className="flex-1 pt-1">
-                      <span className="text-[12px] font-black uppercase text-black block mb-2 leading-none tracking-tight">
-                        Check here for mobile deposit
-                      </span>
-                      {isMobileDeposit && (
-                        <div className="text-[13px] font-black uppercase leading-tight text-black mt-3 bg-slate-50 p-3 rounded border-2 border-black/15">
-                          For Mobile Deposit Only <br/> 
-                          {depositBankName && (
-                            <span className="text-[15px] text-accent tracking-tighter mt-1 block font-black">
-                              at {depositBankName}
-                            </span>
-                          )}
-                        </div>
+                <div className="mt-4 space-y-4">
+                  {/* Mobile Deposit Endorsement Text */}
+                  {isMobileDeposit && (
+                    <div className="text-[10px] font-bold uppercase leading-tight text-black p-2 bg-slate-50 border border-black/10 rounded">
+                      For Mobile Deposit Only <br/> 
+                      {depositBankName && (
+                        <span className="text-[11px] text-accent tracking-tight mt-0.5 block font-bold">
+                          at {depositBankName}
+                        </span>
                       )}
                     </div>
+                  )}
+
+                  {/* Single Mobile Deposit Checkbox */}
+                  <div className="flex items-center gap-3 pt-2">
+                    <div className="w-6 h-6 border-[2px] border-black flex items-center justify-center shrink-0">
+                      {isMobileDeposit && <Check className="w-5 h-5 text-black stroke-[4px]" />}
+                    </div>
+                    <span className="text-[9px] font-bold uppercase text-black leading-tight tracking-tight">
+                      Check here for mobile deposit
+                    </span>
                   </div>
                 </div>
                 
-                {/* Bottom Limit Notice */}
-                <div className="mt-auto border-t-[5px] border-black border-dashed pt-6">
-                  <p className="text-[14px] text-center font-black uppercase text-black leading-none tracking-tighter">
-                    DO NOT WRITE, STAMP, OR SIGN BELOW THIS LINE
+                {/* Footer Notice */}
+                <div className="mt-auto border-t-[3px] border-black border-dashed pt-4">
+                  <p className="text-[11px] text-center font-bold uppercase text-black leading-none tracking-tighter">
+                    DO NOT WRITE BELOW THIS LINE
                   </p>
-                  <p className="text-[10px] text-center uppercase opacity-40 mt-2 font-black tracking-tight">Reserved for Financial Institution Use Only</p>
+                  <p className="text-[8px] text-center uppercase opacity-40 mt-1 font-medium tracking-tight">Financial Institution Use Only</p>
                 </div>
               </div>
             </div>
