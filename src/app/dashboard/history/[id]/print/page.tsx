@@ -249,13 +249,13 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 <div className="relative pt-4">
                   <p className="text-[11px] font-black uppercase tracking-widest text-black/50 mb-6">Endorse Here</p>
                   
-                  {/* Signature Overlay - Perfectly aligned on the first line */}
+                  {/* Signature Overlay - Anchored to the top line */}
                   <div className="absolute top-[32px] left-0 w-full h-[60px] pointer-events-none flex items-center justify-center z-10">
                     {endorsementSignature && (
                       <img 
                         src={endorsementSignature} 
                         alt="Endorsement Signature" 
-                        className="max-h-full max-w-full object-contain mix-blend-multiply scale-[1.8] transform translate-y-[-10px]" 
+                        className="max-h-full max-w-full object-contain mix-blend-multiply scale-[1.8] transform translate-y-[-12px]" 
                       />
                     )}
                   </div>
@@ -269,17 +269,18 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
                 <div className="pt-8 space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 border-[2px] border-black flex items-center justify-center bg-white shrink-0 mt-0.5 shadow-sm">
-                      {isMobileDeposit && <Check className="w-5 h-5 text-black stroke-[4px]" />}
+                    {/* Explicitly defined checkbox for visibility */}
+                    <div className="w-7 h-7 border-[3px] border-black flex items-center justify-center bg-white shrink-0 mt-0.5 shadow-sm">
+                      {isMobileDeposit && <Check className="w-6 h-6 text-black stroke-[5px]" />}
                     </div>
                     <div className="flex-1">
-                      <span className="text-[10px] font-black uppercase text-black block mb-2 leading-none tracking-tighter">
+                      <span className="text-[11px] font-black uppercase text-black block mb-2 leading-none tracking-tighter">
                         Check here for mobile deposit
                       </span>
                       {isMobileDeposit && (
-                        <div className="text-[12px] font-black uppercase leading-snug text-black bg-white/90 p-3 rounded-md border-2 border-black/30 shadow-sm animate-in fade-in duration-300">
+                        <div className="text-[13px] font-black uppercase leading-snug text-black bg-white/95 p-3 rounded-md border-[2.5px] border-black shadow-sm mt-2 animate-in fade-in zoom-in-95 duration-300">
                           For Mobile Deposit Only <br/> 
-                          <span className="text-[14px] text-accent tracking-tight">{depositBankName ? `at ${depositBankName}` : ''}</span>
+                          <span className="text-[15px] text-accent tracking-tight">{depositBankName ? `at ${depositBankName}` : ''}</span>
                         </div>
                       )}
                     </div>
