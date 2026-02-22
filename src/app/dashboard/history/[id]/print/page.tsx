@@ -5,7 +5,7 @@ import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, ShieldCheck, Square, CheckSquare, Pencil, CheckCircle2 } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2, ShieldCheck, Square, CheckSquare, Pencil, CheckCircle2, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SignaturePad } from '@/components/dashboard/signature-pad';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -127,7 +127,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 onCheckedChange={(checked) => setIsMobileDeposit(!!checked)}
               />
               <Label htmlFor="mobile-deposit" className="text-sm font-medium leading-none cursor-pointer">
-                Mark as Mobile Deposit
+                Mark as Mobile Deposit (Adds "For Mobile Deposit Only" line)
               </Label>
             </div>
             <div className="space-y-4">
@@ -217,61 +217,89 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        {/* Back Side */}
+        {/* Back Side - Refined for Real U.S. Bank Standard */}
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0 print-page-break">
-          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-10 rounded-sm">
-            <div className="absolute top-8 right-12 w-[3.5in]">
-              <div className="border-b-[2px] border-black w-full mb-1"></div>
-              <p className="text-[11px] text-center font-bold uppercase tracking-wider mb-4">Endorse Here</p>
-              
-              <div className="flex items-center justify-center gap-3 mb-4 bg-white/50 p-3 rounded border border-dashed border-slate-300">
-                <div className="w-6 h-6 border-2 border-black flex items-center justify-center bg-white">
-                  {isMobileDeposit ? (
-                    <CheckSquare className="w-5 h-5 text-black" />
-                  ) : (
-                    <Square className="w-5 h-5 text-transparent" />
+          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-0 rounded-sm overflow-hidden">
+            {/* Endorsement Area - Standard Side Layout */}
+            <div className="absolute top-0 right-0 w-[3.5in] h-full border-l-[1.5px] border-black/10 bg-white/30 p-8">
+              <div className="space-y-6">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Endorse Here</p>
+                  <div className="space-y-8">
+                    <div className="border-b-[1.5px] border-black/40 w-full"></div>
+                    <div className="border-b-[1.5px] border-black/40 w-full"></div>
+                    <div className="border-b-[1.5px] border-black/40 w-full"></div>
+                  </div>
+                </div>
+
+                <div className="relative h-20 flex items-center justify-center">
+                  {endorsementSignature && (
+                    <img 
+                      src={endorsementSignature} 
+                      alt="Endorsement Signature" 
+                      className="max-h-full max-w-full object-contain mix-blend-multiply" 
+                    />
                   )}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-tight text-black">
-                  Check here if mobile deposit
-                </span>
-              </div>
 
-              <div className="relative min-h-[100px] flex items-center justify-center mb-6">
-                {endorsementSignature ? (
-                  <img 
-                    src={endorsementSignature} 
-                    alt="Endorsement Signature" 
-                    className="max-h-[100px] max-w-full object-contain mix-blend-multiply" 
-                  />
-                ) : (
-                  <div className="space-y-6 w-full opacity-10">
-                    <div className="border-b-[1.5px] border-black w-full"></div>
-                    <div className="border-b-[1.5px] border-black w-full"></div>
-                    <div className="border-b-[1.5px] border-black w-full"></div>
+                {isMobileDeposit && (
+                  <div className="flex items-start gap-3 bg-black/5 p-3 rounded">
+                    <CheckSquare className="w-5 h-5 text-black shrink-0" />
+                    <p className="text-[10px] font-bold uppercase leading-tight">
+                      For Mobile Deposit Only at <br/> {bankName}
+                    </p>
                   </div>
                 )}
-              </div>
 
-              <div className="mt-8 pt-4 border-t-[2px] border-black border-dashed">
-                <p className="text-[10px] text-center font-bold uppercase leading-tight text-black/60">
-                  DO NOT WRITE, STAMP, OR SIGN BELOW THIS LINE
-                </p>
-                <p className="text-[8px] text-center uppercase mt-1 opacity-50">Reserved for Financial Institution Use Only</p>
+                <div className="pt-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-[1.5px] border-black flex items-center justify-center bg-white">
+                      {isMobileDeposit && <div className="w-3 h-3 bg-black" />}
+                    </div>
+                    <span className="text-[9px] font-bold uppercase text-black">Check here for mobile deposit</span>
+                  </div>
+                  
+                  <div className="border-t-[1.5px] border-black border-dashed pt-2">
+                    <p className="text-[9px] text-center font-bold uppercase text-black/60 leading-tight">
+                      DO NOT WRITE, STAMP, OR SIGN BELOW THIS LINE
+                    </p>
+                    <p className="text-[7px] text-center uppercase opacity-40 mt-1">Reserved for Financial Institution Use Only</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none rotate-[-35deg]">
-              <span className="text-7xl font-black uppercase tracking-[0.3em]">Security Document</span>
+            {/* Security Features & Watermark */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none rotate-[-35deg] select-none">
+              <span className="text-8xl font-black uppercase tracking-[0.4em]">Original Document</span>
             </div>
-            
-            <div className="absolute bottom-8 left-10 flex items-center gap-3 text-black/30">
-              <ShieldCheck className="w-6 h-6" />
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-black tracking-[0.25em]">Verified Digital E-Check</span>
-                <span className="text-[8px] font-bold">Compliant with U.S. Check 21 Processing Standards</span>
+
+            <div className="absolute bottom-8 left-10 space-y-4">
+              <div className="flex items-center gap-3 text-black/30">
+                <ShieldCheck className="w-8 h-8" />
+                <div className="flex flex-col">
+                  <span className="text-[11px] uppercase font-black tracking-[0.2em]">Verified Secure E-Check</span>
+                  <span className="text-[8px] font-bold">Standard U.S. Check 21 Processing Compliant</span>
+                </div>
               </div>
+              
+              <Card className="bg-white/40 border-black/10 shadow-none w-64">
+                <CardContent className="p-3">
+                  <p className="text-[7px] font-bold uppercase text-black/40 mb-2 border-b border-black/5 pb-1 flex items-center gap-1">
+                    <Lock className="w-2 h-2" /> Security Features
+                  </p>
+                  <ul className="text-[6px] uppercase font-bold space-y-1 text-black/60">
+                    <li>• Microprint Signature Line</li>
+                    <li>• Unique Check Verification Code</li>
+                    <li>• Digital Fraud Protection Surface</li>
+                    <li>• High-Resolution MICR Scanning Support</li>
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
+
+            {/* Microprint Border */}
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-repeat-x opacity-10" style={{ backgroundImage: 'radial-gradient(circle, black 0.5px, transparent 0.5px)', backgroundSize: '3px 3px' }}></div>
           </div>
         </div>
       </div>
