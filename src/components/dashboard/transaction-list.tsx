@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Transaction } from '@/lib/types';
@@ -37,7 +36,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <p className="text-xs text-muted-foreground">{tx.date}</p>
+                <p className="text-xs text-muted-foreground">{tx.initiatedAt}</p>
                 <span className="text-xs text-muted-foreground/30">•</span>
                 <p className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">{tx.memo}</p>
               </div>

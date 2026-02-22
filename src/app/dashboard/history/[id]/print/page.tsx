@@ -1,8 +1,7 @@
-
 'use client';
 
 import { use, useMemo } from 'react';
-import { useDoc, useFirestore, useUser } from '@/firebase';
+import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -15,19 +14,19 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
   const db = useFirestore();
   const { user } = useUser();
 
-  const transactionRef = useMemo(() => {
+  const transactionRef = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return doc(db, 'users', user.uid, 'transactions', id);
+    return doc(db, 'eCheckTransactions', id);
   }, [db, user, id]);
 
-  const { data: transaction, loading: txLoading } = useDoc<Transaction>(transactionRef);
+  const { data: transaction, isLoading: txLoading } = useDoc<Transaction>(transactionRef);
 
-  const accountRef = useMemo(() => {
-    if (!db || !user || !transaction?.fromAccountId) return null;
-    return doc(db, 'users', user.uid, 'accounts', transaction.fromAccountId);
+  const accountRef = useMemoFirebase(() => {
+    if (!db || !user || !transaction?.senderBankAccountId) return null;
+    return doc(db, 'users', user.uid, 'bankAccounts', transaction.senderBankAccountId);
   }, [db, user, transaction]);
 
-  const { data: account, loading: accLoading } = useDoc<BankAccount>(accountRef);
+  const { data: account, isLoading: accLoading } = useDoc<BankAccount>(accountRef);
 
   const payerName = user?.displayName || 'Authorized Business Entity';
   const payeeName = transaction?.recipientName || 'Valued Recipient';
@@ -120,7 +119,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 <div className="flex items-center justify-end gap-2 mt-1">
                   <span className="text-[10px] uppercase font-bold">Date:</span>
                   <div className="border-b-[1.5px] border-black min-w-[140px] text-center font-mono py-0.5 font-bold text-lg">
-                    {transaction.date}
+                    {transaction.initiatedAt}
                   </div>
                 </div>
               </div>

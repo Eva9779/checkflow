@@ -1,5 +1,6 @@
 export interface BankAccount {
   id: string;
+  userProfileId: string;
   bankName: string;
   bankAddress?: string;
   routingNumber: string;
@@ -11,7 +12,10 @@ export interface BankAccount {
 
 export interface Transaction {
   id: string;
-  type: 'sent';
+  senderUserProfileId: string;
+  receiverUserProfileId?: string;
+  senderBankAccountId: string;
+  receiverBankAccountId?: string;
   recipientName: string;
   recipientAddress?: string;
   recipientRouting?: string;
@@ -19,9 +23,8 @@ export interface Transaction {
   amount: number;
   memo: string;
   status: 'completed' | 'pending' | 'failed';
-  date: string;
+  initiatedAt: string;
   checkNumber?: string;
-  fromAccountId?: string;
   deliveryMethod: 'print' | 'stripe';
   stripeTransferId?: string;
   signatureData?: string; // Base64 encoded signature image

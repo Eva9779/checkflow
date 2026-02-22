@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -6,22 +5,24 @@ import { TransactionList } from '@/components/dashboard/transaction-list';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Filter, Download, Loader2 } from 'lucide-react';
-import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, where } from 'firebase/firestore';
+import { Transaction } from '@/lib/types';
 
 export default function TransactionHistoryPage() {
   const db = useFirestore();
   const { user } = useUser();
 
-  const transactionsQuery = useMemo(() => {
+  const transactionsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
-      collection(db, 'users', user.uid, 'transactions'),
-      orderBy('date', 'desc')
+      collection(db, 'eCheckTransactions'),
+      where('senderUserProfileId', '==', user.uid),
+      orderBy('initiatedAt', 'desc')
     );
   }, [db, user]);
 
-  const { data: transactions, loading } = useCollection(transactionsQuery);
+  const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 
   return (
     <div className="space-y-6">
@@ -50,7 +51,7 @@ export default function TransactionHistoryPage() {
 
       <div className="space-y-4">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider px-2">Recent Transactions</h2>
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-accent" /></div>
         ) : (
           <TransactionList transactions={transactions || []} />

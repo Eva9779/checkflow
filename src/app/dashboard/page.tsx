@@ -1,37 +1,34 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Wallet, FileText, TrendingUp, Building2, Clock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useFirestore, useUser, useCollection } from '@/firebase';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy, where } from 'firebase/firestore';
-import { useMemo } from 'react';
-import { TransactionList } from '@/components/dashboard/transaction-list';
 import { Transaction, BankAccount } from '@/lib/types';
 
 export default function DashboardOverview() {
   const db = useFirestore();
   const { user } = useUser();
 
-  const transactionsQuery = useMemo(() => {
+  const transactionsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
-      collection(db, 'users', user.uid, 'transactions'),
-      where('type', '==', 'sent'),
-      orderBy('date', 'desc'),
+      collection(db, 'eCheckTransactions'),
+      where('senderUserProfileId', '==', user.uid),
+      orderBy('initiatedAt', 'desc'),
       limit(5)
     );
   }, [db, user]);
 
-  const accountsQuery = useMemo(() => {
+  const accountsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return collection(db, 'users', user.uid, 'accounts');
+    return collection(db, 'users', user.uid, 'bankAccounts');
   }, [db, user]);
 
-  const { data: transactions, loading: txLoading } = useCollection<Transaction>(transactionsQuery as any);
-  const { data: accounts, loading: accLoading } = useCollection<BankAccount>(accountsQuery as any);
+  const { data: transactions, isLoading: txLoading } = useCollection<Transaction>(transactionsQuery);
+  const { data: accounts, isLoading: accLoading } = useCollection<BankAccount>(accountsQuery);
 
   const totalSent = (transactions || [])
     .reduce((acc, tx) => acc + tx.amount, 0);

@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Sparkles, Send, ShieldCheck, Loader2, CreditCard, ReceiptText, Info, Building2, MapPin, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { aiMemoAssistant } from '@/ai/flows/ai-memo-assistant';
-import { useFirestore, useUser, useCollection } from '@/firebase';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -25,12 +25,12 @@ export default function SendPaymentPage() {
   const db = useFirestore();
   const { user } = useUser();
   
-  const accountsQuery = useMemo(() => {
+  const accountsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return collection(db, 'users', user.uid, 'accounts');
+    return collection(db, 'users', user.uid, 'bankAccounts');
   }, [db, user]);
 
-  const { data: accounts, loading: accLoading } = useCollection(accountsQuery);
+  const { data: accounts, isLoading: accLoading } = useCollection(accountsQuery);
 
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -139,7 +139,7 @@ export default function SendPaymentPage() {
       }
 
       const txData = {
-        type: 'sent',
+        senderUserProfileId: user.uid,
         recipientName: formData.recipientName,
         recipientAddress: formData.recipientAddress,
         recipientRouting: deliveryMethod === 'stripe' ? formData.recipientRouting : null,
@@ -147,9 +147,9 @@ export default function SendPaymentPage() {
         amount: amountNum,
         memo: formData.memo || formData.purpose,
         status: deliveryMethod === 'stripe' ? 'completed' : 'pending',
-        date: new Date().toISOString().split('T')[0],
+        initiatedAt: new Date().toISOString().split('T')[0],
         checkNumber: deliveryMethod === 'print' ? formData.checkNumber : null,
-        fromAccountId: formData.fromAccount,
+        senderBankAccountId: formData.fromAccount,
         payerBankName: selectedAccount.bankName,
         payerRoutingNumber: selectedAccount.routingNumber,
         payerAccountNumber: `****${selectedAccount.accountNumber.slice(-4)}`,
@@ -159,7 +159,7 @@ export default function SendPaymentPage() {
         createdAt: serverTimestamp()
       };
 
-      const txRef = collection(db, 'users', user.uid, 'transactions');
+      const txRef = collection(db, 'eCheckTransactions');
       
       addDoc(txRef, txData).catch(async () => {
         const permissionError = new FirestorePermissionError({

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -10,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Building2, Plus, ShieldCheck, CheckCircle2, MoreVertical, Loader2, MapPin, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useFirestore, useUser, useCollection } from '@/firebase';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -22,12 +21,12 @@ export default function BankAccountsPage() {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const accountsQuery = useMemo(() => {
+  const accountsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return collection(db, 'users', user.uid, 'accounts');
+    return collection(db, 'users', user.uid, 'bankAccounts');
   }, [db, user]);
 
-  const { data: accounts, loading: accountsLoading } = useCollection(accountsQuery);
+  const { data: accounts, isLoading: accountsLoading } = useCollection(accountsQuery);
 
   const [newAccount, setNewAccount] = useState({
     bankName: '',
@@ -63,6 +62,7 @@ export default function BankAccountsPage() {
     setLoading(true);
 
     const accountData = {
+      userProfileId: user.uid,
       bankName: newAccount.bankName,
       bankAddress: newAccount.bankAddress,
       routingNumber: newAccount.routingNumber,
@@ -72,7 +72,7 @@ export default function BankAccountsPage() {
       createdAt: serverTimestamp()
     };
 
-    const accountsRef = collection(db, 'users', user.uid, 'accounts');
+    const accountsRef = collection(db, 'users', user.uid, 'bankAccounts');
     
     addDoc(accountsRef, accountData)
       .then(() => {
@@ -105,7 +105,7 @@ export default function BankAccountsPage() {
 
   const handleDeleteAccount = (id: string) => {
     if (!db || !user) return;
-    const accountRef = doc(db, 'users', user.uid, 'accounts', id);
+    const accountRef = doc(db, 'users', user.uid, 'bankAccounts', id);
     deleteDoc(accountRef).catch(async () => {
       const permissionError = new FirestorePermissionError({
         path: accountRef.path,
@@ -118,7 +118,7 @@ export default function BankAccountsPage() {
   const handleSetDefault = (id: string) => {
     if (!db || !user || !accounts) return;
     accounts.forEach(acc => {
-      const ref = doc(db, 'users', user.uid, 'accounts', acc.id);
+      const ref = doc(db, 'users', user.uid, 'bankAccounts', acc.id);
       updateDoc(ref, { isDefault: acc.id === id }).catch(async () => {
         const permissionError = new FirestorePermissionError({
           path: ref.path,
