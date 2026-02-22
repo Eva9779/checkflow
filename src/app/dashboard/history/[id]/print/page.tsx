@@ -106,7 +106,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0">
           <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#fdfdfd] p-8 print:border-[1.5px]">
             {/* Header: Payer Info and Check Number */}
-            <div className="flex justify-between items-start mb-4">
+            <div className="flex justify-between items-start mb-2">
               <div className="space-y-0.5">
                 <p className="font-bold text-lg uppercase tracking-tight leading-none">{payerName}</p>
                 <div className="text-[10px] font-medium leading-tight max-w-[280px] uppercase opacity-80">
@@ -118,7 +118,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 {fractionalRouting && (
                   <p className="text-[8px] font-bold text-slate-500 mb-2">{fractionalRouting}</p>
                 )}
-                <div className="flex items-center justify-end gap-2 mt-2">
+                <div className="flex items-center justify-end gap-2 mt-1">
                   <span className="text-[10px] uppercase font-bold">Date:</span>
                   <div className="border-b-[1.5px] border-black min-w-[140px] text-center font-mono py-0.5 font-bold text-lg">
                     {transaction.date}
@@ -128,7 +128,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             </div>
 
             {/* Payee and Amount Line */}
-            <div className="flex items-end gap-2 mb-6 mt-8">
+            <div className="flex items-end gap-2 mb-4 mt-6">
               <span className="text-[11px] font-extrabold uppercase min-w-[100px] pb-1">Pay to the Order of:</span>
               <div className="flex-1 border-b-[1.5px] border-black pb-1 font-bold text-xl uppercase tracking-tighter">
                 {payeeName}
@@ -142,48 +142,48 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             </div>
 
             {/* Amount in Words */}
-            <div className="flex items-end gap-2 mb-8">
+            <div className="flex items-end gap-2 mb-4">
               <div className="flex-1 border-b-[1.5px] border-black pb-1 italic text-[14px] font-bold tracking-tight">
                 {amountInWords(transaction.amount)}
               </div>
             </div>
 
-            {/* Footer: Bank and Memo/Signature */}
-            <div className="grid grid-cols-2 gap-16 mt-4">
-              <div className="space-y-1">
-                <p className="text-[8px] font-bold uppercase tracking-widest opacity-60">Financial Institution</p>
-                <p className="font-bold text-[13px] leading-tight uppercase">{bankName}</p>
+            {/* Bank Info (Anchored Above MICR) */}
+            <div className="absolute bottom-[0.8in] left-8">
+               <p className="text-[8px] font-bold uppercase tracking-widest opacity-60">Financial Institution</p>
+               <p className="font-bold text-[13px] leading-tight uppercase">{bankName}</p>
+            </div>
+
+            {/* Memo & Signature (Anchored Above MICR) */}
+            <div className="absolute bottom-[0.8in] right-8 left-[3in] flex items-end gap-8">
+              <div className="flex-1 flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase pb-0.5">Memo:</span>
+                <div className="flex-1 border-b-[1.5px] border-black pb-0.5 text-xs font-bold truncate">
+                  {transaction.memo}
+                </div>
               </div>
-              <div className="flex flex-col justify-end space-y-3">
-                <div className="flex items-end gap-3">
-                  <span className="text-[10px] font-bold uppercase pb-0.5">Memo:</span>
-                  <div className="flex-1 border-b-[1.5px] border-black pb-0.5 text-xs font-bold truncate">
-                    {transaction.memo}
-                  </div>
+              <div className="w-[2.5in] flex flex-col items-center">
+                <div className="h-12 w-full flex items-center justify-center">
+                  {transaction.signatureData ? (
+                    <img 
+                      src={transaction.signatureData} 
+                      alt="Authorized Signature" 
+                      className="max-h-full max-w-full object-contain mix-blend-multiply" 
+                    />
+                  ) : (
+                    <div className="italic text-[10px] text-muted-foreground pb-2">Authorized Signature Required</div>
+                  )}
                 </div>
-                <div className="relative h-14 w-full flex flex-col items-center">
-                  <div className="relative h-12 w-full flex items-center justify-center">
-                    {transaction.signatureData ? (
-                      <img 
-                        src={transaction.signatureData} 
-                        alt="Authorized Signature" 
-                        className="max-h-full max-w-full object-contain mix-blend-multiply" 
-                      />
-                    ) : (
-                      <div className="italic text-[10px] text-muted-foreground pb-2">Authorized Signature Required</div>
-                    )}
-                  </div>
-                  <div className="w-full border-b-[1.5px] border-black"></div>
-                  <p className="text-[7px] text-center uppercase font-bold tracking-tighter opacity-70 mt-1">
-                    Authorized Electronic Signature - Secure Verification Required
-                  </p>
-                </div>
+                <div className="w-full border-b-[1.5px] border-black"></div>
+                <p className="text-[8px] text-center uppercase font-bold tracking-tighter opacity-70 mt-1">
+                  Authorized Signature
+                </p>
               </div>
             </div>
 
-            {/* MICR Line - Absolute Bottom for High Accuracy (U.S. Standard Order) */}
-            <div className="absolute bottom-5 left-0 w-full flex justify-center micr-line text-[24px] tracking-[0.45em] text-black">
-               ⑈{checkNumber}⑈ ⑆{routingNumber}⑆ {accountNumber}⑈
+            {/* MICR Line - Absolute Bottom (Under Signature and Memo) */}
+            <div className="absolute bottom-4 left-0 w-full flex justify-center micr-line text-[22px] tracking-[0.45em] text-black">
+               ⑆{routingNumber}⑆  {accountNumber}⑈  {checkNumber}
             </div>
           </div>
         </div>
