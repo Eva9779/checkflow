@@ -103,7 +103,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
       <div className="max-w-[8.5in] mx-auto space-y-12 pb-20">
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0">
-          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#fdfdfd] p-8 print:border-[1.5px]">
+          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-8 print:border-[1.5px]">
             <div className="flex justify-between items-start mb-2">
               <div className="space-y-0.5">
                 <p className="font-bold text-lg uppercase tracking-tight leading-none">{payerName}</p>
@@ -182,12 +182,12 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
         </div>
 
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0 print-page-break">
-          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#fdfdfd] p-10 rounded-sm">
+          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-10 rounded-sm">
             <div className="absolute top-8 right-12 w-[3.5in]">
               <div className="border-b-[2px] border-black w-full mb-1"></div>
               <p className="text-[11px] text-center font-bold uppercase tracking-wider mb-4">Endorse Here</p>
               
-              <div className="flex items-center justify-center gap-3 mb-10 bg-slate-50 p-3 rounded border border-dashed border-slate-300">
+              <div className="flex items-center justify-center gap-3 mb-10 bg-slate-50/50 p-3 rounded border border-dashed border-slate-300">
                 <div className="w-6 h-6 border-2 border-black/20 flex items-center justify-center bg-white">
                   <Square className="w-5 h-5 text-transparent" />
                 </div>
