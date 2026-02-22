@@ -50,12 +50,20 @@
     margin: 0;
   }
   
-  /* Hide the entire dashboard furniture */
+  /* Strictly hide everything except the print-only check container */
+  html, body {
+    height: auto;
+    overflow: visible !important;
+  }
+
+  /* Hide the entire dashboard UI */
   aside, 
   header, 
   [data-sidebar="trigger"],
   nav,
-  .no-print {
+  .no-print,
+  .sidebar-provider,
+  [data-sidebar="wrapper"] {
     display: none !important;
   }
 
@@ -73,29 +81,29 @@
     width: 100% !important;
     max-width: none !important;
     background: transparent !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
   }
 
   .check-print-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5in;
-    padding-top: 0.5in;
+    display: block !important;
+    width: 8.125in !important;
+    margin: 0 auto !important;
+    padding: 0.5in 0 !important;
   }
 
   .check-wrapper {
     transform: none !important;
-    margin: 0 !important;
+    margin: 0 auto 0.5in auto !important;
     box-shadow: none !important;
-    border: none !important;
+    border: 1px solid black !important;
+    break-inside: avoid !important;
+    page-break-after: always !important;
   }
 
-  .print-page-break {
-    page-break-before: always !important;
+  .check-wrapper:last-child {
+    page-break-after: avoid !important;
   }
 }
 
