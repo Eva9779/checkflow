@@ -194,7 +194,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
           <div className="space-y-4">
             <div className="flex items-end gap-2 relative">
               <span className="text-[8.5pt] font-bold uppercase min-w-[80px] pb-1 text-black">Pay to the Order of:</span>
-              {/* Payee name back to Black Ink */}
               <div className="flex-1 border-b-2 border-black pb-1 font-bold text-[13.5pt] uppercase tracking-tight text-black">
                 {payeeName}
               </div>

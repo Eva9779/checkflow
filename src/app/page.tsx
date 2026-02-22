@@ -1,10 +1,14 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, ArrowRightLeft, Clock, Zap } from 'lucide-react';
+import { ShieldCheck, ArrowRightLeft, Clock, Zap, Phone } from 'lucide-react';
 
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
+      <div className="bg-primary text-white py-2.5 px-6 text-center text-sm font-bold flex items-center justify-center gap-2 shadow-sm z-20">
+        <Phone className="w-4 h-4" />
+        We print and we mail bulk checks. Place your order now at 1-213-603-6351
+      </div>
       <header className="px-6 py-4 flex items-center justify-between border-b bg-white">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center text-white font-bold">EC</div>
