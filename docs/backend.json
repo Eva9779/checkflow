@@ -1,59 +1,333 @@
-
 {
   "entities": {
-    "BankAccount": {
-      "title": "Bank Account",
-      "description": "A connected U.S. bank account for e-check transfers.",
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
       "type": "object",
+      "description": "Represents a user within the E-CheckFlow application, allowing them to manage bank accounts and transactions.",
       "properties": {
-        "bankName": { "type": "string" },
-        "bankAddress": { "type": "string" },
-        "routingNumber": { "type": "string" },
-        "accountNumber": { "type": "string" },
-        "fractionalRouting": { "type": "string" },
-        "isDefault": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was last updated.",
+          "format": "date-time"
+        }
       },
-      "required": ["bankName", "routingNumber", "accountNumber"]
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName",
+        "createdAt"
+      ]
     },
-    "Transaction": {
-      "title": "Transaction",
-      "description": "An e-check or ACH payout record.",
+    "BankAccount": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BankAccount",
       "type": "object",
+      "description": "Stores details of a user's linked U.S. bank account for sending and receiving e-check payments. Note: sensitive account numbers are abstracted for this model, with only displayable parts or references shown.",
       "properties": {
-        "type": { "type": "string", "enum": ["sent"] },
-        "recipientName": { "type": "string" },
-        "recipientAddress": { "type": "string" },
-        "recipientRouting": { "type": "string" },
-        "recipientAccount": { "type": "string" },
-        "amount": { "type": "number" },
-        "memo": { "type": "string" },
-        "status": { "type": "string", "enum": ["completed", "pending", "failed"] },
-        "date": { "type": "string", "format": "date" },
-        "checkNumber": { "type": "string" },
-        "fromAccountId": { "type": "string" },
-        "payerBankName": { "type": "string" },
-        "payerRoutingNumber": { "type": "string" },
-        "payerAccountNumber": { "type": "string" },
-        "deliveryMethod": { "type": "string", "enum": ["print", "stripe"] },
-        "signatureData": { "type": "string" },
-        "stripeTransferId": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BankAccount entity."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to the UserProfile this bank account belongs to. (Relationship: UserProfile 1:N BankAccount)"
+        },
+        "bankName": {
+          "type": "string",
+          "description": "The official name of the bank."
+        },
+        "accountType": {
+          "type": "string",
+          "description": "The type of bank account (e.g., 'Checking', 'Savings')."
+        },
+        "accountNumberLast4": {
+          "type": "string",
+          "description": "The last 4 digits of the account number for display and identification (full number handled securely externally)."
+        },
+        "routingNumber": {
+          "type": "string",
+          "description": "The bank's routing number (full number handled securely externally)."
+        },
+        "isVerified": {
+          "type": "boolean",
+          "description": "Indicates if the bank account has been verified for use."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the bank account was added to the user's profile.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the bank account details were last updated.",
+          "format": "date-time"
+        }
       },
-      "required": ["recipientName", "amount", "status", "date", "deliveryMethod"]
+      "required": [
+        "id",
+        "userProfileId",
+        "bankName",
+        "accountType",
+        "accountNumberLast4",
+        "routingNumber",
+        "isVerified",
+        "createdAt"
+      ]
+    },
+    "ECheckTransaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ECheckTransaction",
+      "type": "object",
+      "description": "Represents a single e-check payment transaction, either initiated (sent) or received. This entity tracks the lifecycle and details of the payment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ECheckTransaction entity."
+        },
+        "senderUserProfileId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who initiated this payment. (Relationship: UserProfile 1:N ECheckTransaction)"
+        },
+        "receiverUserProfileId": {
+          "type": "string",
+          "description": "Optional reference to the UserProfile who is the recipient of the payment within the E-CheckFlow system. (Relationship: UserProfile 1:N ECheckTransaction)"
+        },
+        "senderBankAccountId": {
+          "type": "string",
+          "description": "Reference to the BankAccount used by the sender for this transaction. (Relationship: BankAccount 1:N ECheckTransaction)"
+        },
+        "receiverBankAccountId": {
+          "type": "string",
+          "description": "Optional reference to the BankAccount used by the receiver if they are also an E-CheckFlow user. (Relationship: BankAccount 1:N ECheckTransaction)"
+        },
+        "receiverName": {
+          "type": "string",
+          "description": "The name of the recipient, whether an E-CheckFlow user or external."
+        },
+        "receiverRoutingNumber": {
+          "type": "string",
+          "description": "The routing number of the recipient's bank for external payments."
+        },
+        "receiverAccountNumber": {
+          "type": "string",
+          "description": "The account number of the recipient for external payments."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The monetary amount of the e-check payment."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The currency of the transaction, e.g., 'USD'."
+        },
+        "memo": {
+          "type": "string",
+          "description": "A short description or note provided for the payment."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the transaction (e.g., 'Pending', 'Processing', 'Completed', 'Failed', 'Cancelled')."
+        },
+        "transactionType": {
+          "type": "string",
+          "description": "Indicates if the transaction was 'Sent' or 'Received' by the current user."
+        },
+        "initiatedAt": {
+          "type": "string",
+          "description": "Timestamp when the transaction was initiated.",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "description": "Optional timestamp when the transaction was completed.",
+          "format": "date-time"
+        },
+        "aiMemoSuggestionUsed": {
+          "type": "boolean",
+          "description": "Indicates if an AI-suggested memo was used for this transaction."
+        }
+      },
+      "required": [
+        "id",
+        "senderUserProfileId",
+        "senderBankAccountId",
+        "receiverName",
+        "receiverRoutingNumber",
+        "receiverAccountNumber",
+        "amount",
+        "currency",
+        "memo",
+        "status",
+        "transactionType",
+        "initiatedAt"
+      ]
+    },
+    "PaymentRequest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PaymentRequest",
+      "type": "object",
+      "description": "Represents a request for an e-check payment created by a user, allowing others to fulfill it.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PaymentRequest entity."
+        },
+        "requestorUserProfileId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who created this payment request. (Relationship: UserProfile 1:N PaymentRequest)"
+        },
+        "requestorBankAccountId": {
+          "type": "string",
+          "description": "Reference to the BankAccount where the requested payment should be deposited. (Relationship: BankAccount 1:N PaymentRequest)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "The monetary amount requested."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The currency of the requested payment, e.g., 'USD'."
+        },
+        "memo": {
+          "type": "string",
+          "description": "A short description or note for the requested payment."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the payment request (e.g., 'Pending', 'Fulfilled', 'Cancelled')."
+        },
+        "requestedAt": {
+          "type": "string",
+          "description": "Timestamp when the payment request was created.",
+          "format": "date-time"
+        },
+        "expiresAt": {
+          "type": "string",
+          "description": "Optional timestamp when the payment request expires.",
+          "format": "date-time"
+        },
+        "fulfillingTransactionId": {
+          "type": "string",
+          "description": "Optional reference to the ECheckTransaction that fulfilled this request. (Relationship: ECheckTransaction 1:1 PaymentRequest)"
+        }
+      },
+      "required": [
+        "id",
+        "requestorUserProfileId",
+        "requestorBankAccountId",
+        "amount",
+        "currency",
+        "memo",
+        "status",
+        "requestedAt"
+      ]
     }
   },
   "auth": {
-    "providers": ["google.com", "password"]
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
-    "/users/{userId}/accounts/{accountId}": {
-      "schema": "BankAccount",
-      "description": "Stored business source bank accounts"
-    },
-    "/users/{userId}/transactions/{transactionId}": {
-      "schema": "Transaction",
-      "description": "Records of issued payouts"
-    }
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores individual user profiles. Each document represents a unique user, with access restricted to the owner matching `request.auth.uid`.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to `request.auth.uid`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/bankAccounts/{bankAccountId}",
+        "definition": {
+          "entityName": "BankAccount",
+          "schema": {
+            "$ref": "#/backend/entities/BankAccount"
+          },
+          "description": "Stores bank accounts linked to a specific user. Path-based ownership (`userId`) ensures authorization independence. Each document explicitly includes `userProfileId` (denormalized) for data integrity and explicit rule definition.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this bank account."
+            },
+            {
+              "name": "bankAccountId",
+              "description": "The unique identifier for the bank account."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/eCheckTransactions/{transactionId}",
+        "definition": {
+          "entityName": "ECheckTransaction",
+          "schema": {
+            "$ref": "#/backend/entities/ECheckTransaction"
+          },
+          "description": "Stores all e-check transactions. Includes denormalized `senderUserProfileId` and `receiverUserProfileId` fields for authorization independence, allowing both parties to access the transaction without needing to `get()` parent data and facilitating QAPs for list operations.",
+          "params": [
+            {
+              "name": "transactionId",
+              "description": "The unique identifier for the e-check transaction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/paymentRequests/{paymentRequestId}",
+        "definition": {
+          "entityName": "PaymentRequest",
+          "schema": {
+            "$ref": "#/backend/entities/PaymentRequest"
+          },
+          "description": "Stores payment requests created by a specific user. Path-based ownership (`userId`) ensures authorization independence. Each document explicitly includes `requestorUserProfileId` (denormalized) for data integrity and explicit rule definition.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who created this payment request."
+            },
+            {
+              "name": "paymentRequestId",
+              "description": "The unique identifier for the payment request."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The recommended Firestore structure for E-CheckFlow prioritizes security, scalability, and debuggability by strictly adhering to Authorization Independence and Structural Segregation principles. User-specific and privately owned data such as `UserProfiles`, `BankAccounts`, and `PaymentRequests` are organized into subcollections under a top-level `/users/{userId}` collection. This path-based ownership (`/users/{userId}/bankAccounts/{bankAccountId}` and `/users/{userId}/paymentRequests/{paymentRequestId}`) inherently links the data to the authenticated user (`request.auth.uid == userId`), making authorization rules simple, explicit, and highly debuggable without any `get()` calls.\n\nFor `ECheckTransaction` entities, which involve two distinct `UserProfile` owners (sender and receiver), a top-level collection `/eCheckTransactions/{transactionId}` is used. To achieve **Authorization Independence** for these collaborative documents, each `ECheckTransaction` document explicitly denormalizes both `senderUserProfileId` and `receiverUserProfileId` fields directly within the document. This allows security rules to evaluate access rights based solely on the document's own data (e.g., `request.auth.uid == resource.data.senderUserProfileId || request.auth.uid == resource.data.receiverUserProfileId`), completely eliminating the need for cross-document `get()` operations and supporting atomic batch/transactional writes.\n\nThis design effectively supports **QAPs (Rules are not Filters)** for `list` operations:\n*   For `/users/{userId}/bankAccounts` and `/users/{userId}/paymentRequests`, listing is secure because the `userId` in the path implicitly filters results to only those owned by the authenticated user. The rules will simply check `request.auth.uid == userId` for all operations, including `list`.\n*   For `/eCheckTransactions`, `list` operations are secured by requiring `request.auth.uid` to match either the `senderUserProfileId` or `receiverUserProfileId` field within each document. This means a user can only query for transactions they are a party to, and the rules ensure that only relevant documents are returned, making the `list` operation safe and efficient without server-side filtering. The explicit denormalization of authorization fields (`senderUserProfileId`, `receiverUserProfileId`) is critical here.\n\nFurthermore, the structure uses descriptive wildcards (e.g., `{userId}`, `{bankAccountId}`) and dedicated `status` fields within `ECheckTransaction` and `PaymentRequest` to ensure data clarity and predictability, making the system easier to understand, maintain, and extend."
   }
 }
