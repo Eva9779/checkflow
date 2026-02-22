@@ -21,6 +21,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   const [isMobileDeposit, setIsMobileDeposit] = useState(false);
   const [depositBankName, setDepositBankName] = useState('');
+  const [hasSetDefaultBank, setHasSetDefaultBank] = useState(false);
   const [endorsementSignature, setEndorsementSignature] = useState<string | null>(null);
 
   const transactionRef = useMemoFirebase(() => {
@@ -37,11 +38,13 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   const { data: account, isLoading: accLoading } = useDoc<BankAccount>(accountRef);
 
+  // Set default bank name once when account data is loaded
   useEffect(() => {
-    if (account?.bankName && !depositBankName) {
+    if (account?.bankName && !hasSetDefaultBank) {
       setDepositBankName(account.bankName);
+      setHasSetDefaultBank(true);
     }
-  }, [account, depositBankName]);
+  }, [account, hasSetDefaultBank]);
 
   const payerName = user?.displayName || 'Authorized Business Entity';
   const payeeName = transaction?.recipientName || 'Valued Recipient';
