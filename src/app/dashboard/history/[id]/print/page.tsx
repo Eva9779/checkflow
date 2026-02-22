@@ -45,11 +45,11 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
     }
   }, [account, hasInitializedBank]);
 
-  const handlePrint = useCallback(() => {
+  const handlePrint = () => {
     if (typeof window !== 'undefined') {
       window.print();
     }
-  }, []);
+  };
 
   if (txLoading || accLoading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -57,7 +57,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
     </div>
   );
 
-  if (!transaction) return <div className="p-20 text-center font-bold">Transaction record not found.</div>;
+  if (!transaction) return <div className="p-20 text-center font-bold text-foreground">Transaction record not found.</div>;
 
   const payerName = user?.displayName || 'Authorized Business Entity';
   const payeeName = transaction?.recipientName || 'Valued Recipient';
@@ -109,12 +109,11 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      {/* Configuration Area */}
-      <div className="max-w-4xl mx-auto no-print mb-8 space-y-6">
+      <div className="max-w-5xl mx-auto no-print mb-8 space-y-6">
         <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border">
           <div className="space-y-1">
             <Button variant="ghost" onClick={() => router.back()} className="h-8 text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back to History
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back
             </Button>
             <h2 className="text-xl font-headline font-bold px-2">Check Preparation</h2>
           </div>
@@ -132,7 +131,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               <Pencil className="w-5 h-5 text-accent" /> Endorsement Preparation
             </CardTitle>
             <CardDescription className="text-sm">
-              Prepare the back of the check for deposit.
+              Prepare the check for digital or paper deposit.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-8 space-y-8">
@@ -171,13 +170,11 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
         </Card>
       </div>
 
-      {/* Actual Check Content - Optimized for PDF printing */}
-      <div className="max-w-[8.125in] mx-auto pb-20 print:p-0">
-        <div className="overflow-x-auto no-scrollbar">
-          <div className="space-y-12 print:space-y-0">
-            {/* Front Side */}
-            <div className="bg-white shadow-lg check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0 print:shadow-none print:border-none">
-              <div className="relative border-[1px] border-black h-[3in] w-[8.125in] bg-[#fcfdfe] p-6 flex flex-col justify-between mx-auto">
+      <div className="max-w-full overflow-hidden flex flex-col items-center">
+        <div className="w-full max-w-[8.125in] bg-white shadow-2xl p-4 md:p-12 print:p-0 print:shadow-none print:bg-transparent rounded-lg">
+          <div className="space-y-16 print:space-y-0 flex flex-col items-center">
+            <div className="check-preview-container w-full overflow-hidden">
+               <div className="relative border-[1px] border-black h-[3in] w-[8.125in] bg-[#fcfdfe] p-6 flex flex-col justify-between mx-auto origin-top-left sm:origin-center scale-[0.6] xs:scale-[0.8] sm:scale-100 print:scale-100">
                 <div className="flex justify-between items-start">
                   <div className="space-y-0.5">
                     <p className="font-bold text-[8.5pt] uppercase tracking-tight leading-none">{payerName}</p>
@@ -233,7 +230,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                       {transaction.signatureData && (
                         <img 
                           src={transaction.signatureData} 
-                          alt="Authorized Signature" 
+                          alt="Signature" 
                           className="absolute bottom-1 max-h-[30px] max-w-full object-contain mix-blend-multiply" 
                         />
                       )}
@@ -251,9 +248,8 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* Back Side */}
-            <div className="bg-white shadow-lg check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0 print:shadow-none print:border-none print-page-break">
-              <div className="relative border-[1px] border-black h-[3in] w-[8.125in] bg-[#fcfdfe] p-0 rounded-sm overflow-hidden flex mx-auto">
+            <div className="check-preview-container w-full overflow-hidden print-page-break">
+              <div className="relative border-[1px] border-black h-[3in] w-[8.125in] bg-[#fcfdfe] p-0 rounded-sm overflow-hidden flex mx-auto origin-top-left sm:origin-center scale-[0.6] xs:scale-[0.8] sm:scale-100 print:scale-100">
                 <div className="flex-1 p-6 flex flex-col justify-between">
                   <div className="space-y-4">
                     <div className="flex items-center gap-3 text-black/10">
@@ -264,19 +260,16 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                       </div>
                     </div>
                   </div>
-
                   <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none rotate-[-30deg] select-none">
                     <span className="text-[2rem] font-bold uppercase tracking-[0.2em]">Original Document</span>
                   </div>
                 </div>
 
-                {/* Endorsement Area */}
                 <div className="w-[3.25in] h-full border-l-[1px] border-black/20 bg-white p-6">
                   <div className="relative h-full flex flex-col">
                     <p className="text-[9pt] font-bold uppercase tracking-[0.1em] text-black mb-4">Endorse Here</p>
                     
                     <div className="relative w-full">
-                      {/* Endorsement Lines */}
                       <div className="relative border-b border-black w-full h-8 flex items-center justify-center">
                         {endorsementSignature && (
                           <img 
@@ -307,7 +300,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                           {isMobileDeposit && <Check className="w-4 h-4 text-black stroke-[4px]" />}
                         </div>
                         <span className="text-[8.5pt] font-bold uppercase text-black leading-tight tracking-tight">
-                          Check here for mobile deposit
+                          Check for mobile deposit
                         </span>
                       </div>
                     </div>
@@ -324,6 +317,19 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        @media screen and (max-width: 800px) {
+          .check-preview-container {
+            height: 180px;
+          }
+        }
+        @media screen and (max-width: 500px) {
+          .check-preview-container {
+            height: 140px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
