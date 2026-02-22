@@ -1,15 +1,16 @@
 'use client';
 
-import { use, useState, useMemo } from 'react';
+import { use, useState, useEffect } from 'react';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, ShieldCheck, CheckSquare, Pencil, Lock } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2, ShieldCheck, Pencil, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SignaturePad } from '@/components/dashboard/signature-pad';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function PrintCheckPage({ params }: { params: Promise<{ id: string }> }) {
@@ -19,6 +20,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
   const { user } = useUser();
 
   const [isMobileDeposit, setIsMobileDeposit] = useState(false);
+  const [depositBankName, setDepositBankName] = useState('');
   const [endorsementSignature, setEndorsementSignature] = useState<string | null>(null);
 
   const transactionRef = useMemoFirebase(() => {
@@ -34,6 +36,12 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
   }, [db, user, transaction]);
 
   const { data: account, isLoading: accLoading } = useDoc<BankAccount>(accountRef);
+
+  useEffect(() => {
+    if (account?.bankName && !depositBankName) {
+      setDepositBankName(account.bankName);
+    }
+  }, [account, depositBankName]);
 
   const payerName = user?.displayName || 'Authorized Business Entity';
   const payeeName = transaction?.recipientName || 'Valued Recipient';
@@ -94,7 +102,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-8">
-      {/* Preparation Area (No-Print) */}
       <div className="max-w-4xl mx-auto no-print mb-8 space-y-6">
         <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-lg border">
           <div className="space-y-1">
@@ -120,19 +127,37 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="mobile-deposit" 
-                checked={isMobileDeposit} 
-                onCheckedChange={(checked) => setIsMobileDeposit(!!checked)}
-              />
-              <Label htmlFor="mobile-deposit" className="text-sm font-medium leading-none cursor-pointer">
-                Mark as Mobile Deposit (Adds "For Mobile Deposit Only" line)
-              </Label>
-            </div>
-            <div className="space-y-4">
-              <Label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Recipient Endorsement Signature</Label>
-              <SignaturePad onSave={(data) => setEndorsementSignature(data)} onClear={() => setEndorsementSignature(null)} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="mobile-deposit" 
+                    checked={isMobileDeposit} 
+                    onCheckedChange={(checked) => setIsMobileDeposit(!!checked)}
+                  />
+                  <Label htmlFor="mobile-deposit" className="text-sm font-medium leading-none cursor-pointer">
+                    Mark as Mobile Deposit
+                  </Label>
+                </div>
+                
+                {isMobileDeposit && (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <Label htmlFor="deposit-bank" className="text-xs font-bold uppercase text-muted-foreground">Deposit Bank Name</Label>
+                    <Input 
+                      id="deposit-bank"
+                      placeholder="e.g. Chase Bank"
+                      value={depositBankName}
+                      onChange={(e) => setDepositBankName(e.target.value)}
+                      className="h-10"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Recipient Endorsement Signature</Label>
+                <SignaturePad onSave={(data) => setEndorsementSignature(data)} onClear={() => setEndorsementSignature(null)} />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -220,14 +245,12 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
         {/* Back Side */}
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0 print-page-break">
           <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-0 rounded-sm overflow-hidden">
-            {/* Endorsement Area - Standard Side Layout */}
             <div className="absolute top-0 right-0 w-[3.5in] h-full border-l-[1.5px] border-black/10 bg-white/30 p-8">
               <div className="space-y-6">
                 <div className="relative">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Endorse Here</p>
                   
-                  {/* Endorsement Signature Overlay - Positioned exactly on the top line */}
-                  <div className="absolute top-0 left-0 w-full h-16 pointer-events-none flex items-end justify-center z-10">
+                  <div className="absolute top-0 left-0 w-full h-8 pointer-events-none flex items-end justify-center z-10">
                     {endorsementSignature && (
                       <img 
                         src={endorsementSignature} 
@@ -255,7 +278,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                       </span>
                       {isMobileDeposit && (
                         <p className="text-[9px] font-bold uppercase leading-tight text-black bg-black/5 p-1.5 rounded">
-                          For Mobile Deposit Only at <br/> {bankName}
+                          For Mobile Deposit Only {depositBankName ? `at ${depositBankName}` : ''}
                         </p>
                       )}
                     </div>
@@ -271,7 +294,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* Security Features & Watermark */}
             <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none rotate-[-35deg] select-none">
               <span className="text-8xl font-black uppercase tracking-[0.4em]">Original Document</span>
             </div>
@@ -300,7 +322,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </Card>
             </div>
 
-            {/* Microprint Border */}
             <div className="absolute bottom-0 left-0 w-full h-1 bg-repeat-x opacity-10" style={{ backgroundImage: 'radial-gradient(circle, black 0.5px, transparent 0.5px)', backgroundSize: '3px 3px' }}></div>
           </div>
         </div>
