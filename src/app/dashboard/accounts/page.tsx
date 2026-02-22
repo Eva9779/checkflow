@@ -67,7 +67,6 @@ export default function BankAccountsPage() {
       bankAddress: newAccount.bankAddress,
       routingNumber: newAccount.routingNumber,
       fractionalRouting: newAccount.fractionalRouting,
-      // Store full account number for MICR generation and ACH source
       accountNumber: newAccount.accountNumber,
       isDefault: (accounts?.length || 0) === 0,
       createdAt: serverTimestamp()
@@ -76,6 +75,21 @@ export default function BankAccountsPage() {
     const accountsRef = collection(db, 'users', user.uid, 'accounts');
     
     addDoc(accountsRef, accountData)
+      .then(() => {
+        toast({ 
+          title: "Account Linked", 
+          description: `${newAccount.bankName} has been securely connected.` 
+        });
+        setOpen(false);
+        setNewAccount({ 
+          bankName: '', 
+          bankAddress: '', 
+          routingNumber: '', 
+          fractionalRouting: '', 
+          accountNumber: '', 
+          confirmAccountNumber: '' 
+        });
+      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: accountsRef.path,
@@ -83,22 +97,10 @@ export default function BankAccountsPage() {
           requestResourceData: accountData
         });
         errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setLoading(false);
       });
-
-    toast({ 
-      title: "Account Linked", 
-      description: `${newAccount.bankName} has been securely connected for payouts.` 
-    });
-    setOpen(false);
-    setLoading(false);
-    setNewAccount({ 
-      bankName: '', 
-      bankAddress: '', 
-      routingNumber: '', 
-      fractionalRouting: '', 
-      accountNumber: '', 
-      confirmAccountNumber: '' 
-    });
   };
 
   const handleDeleteAccount = (id: string) => {
@@ -126,7 +128,7 @@ export default function BankAccountsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-headline font-bold text-foreground">Bank Accounts</h1>
-          <p className="text-muted-foreground text-sm">Manage source accounts for issuing ACH and e-check payouts.</p>
+          <p className="text-muted-foreground text-sm">Manage source accounts for issuing payouts.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -141,7 +143,7 @@ export default function BankAccountsPage() {
                   <Lock className="w-5 h-5 text-accent" /> Secure Business Source Link
                 </DialogTitle>
                 <DialogDescription>
-                  Enter the banking details for your payout source account. These will be used for MICR generation on checks and as the origin for ACH transfers.
+                  Enter banking details for your source account. These are stored securely in your private cloud database.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -150,14 +152,14 @@ export default function BankAccountsPage() {
                     <Label htmlFor="bankName">Bank Name</Label>
                     <Input 
                       id="bankName" 
-                      placeholder="e.g. Chase, Wells Fargo" 
+                      placeholder="e.g. Chase" 
                       required 
                       value={newAccount.bankName}
                       onChange={e => setNewAccount({...newAccount, bankName: e.target.value})}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="fractional">Fractional Routing (Optional)</Label>
+                    <Label htmlFor="fractional">Fractional Routing</Label>
                     <Input 
                       id="fractional" 
                       placeholder="e.g. 1-2/345" 
@@ -217,7 +219,7 @@ export default function BankAccountsPage() {
                 </div>
                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground bg-secondary/50 p-3 rounded-lg border">
                   <ShieldCheck className="w-4 h-4 text-accent shrink-0" />
-                  <span>Encrypted Storage: Details are only decrypted during check generation and ACH authorization.</span>
+                  <span>Encrypted Storage: Your full details are only decrypted when generating check MICR lines.</span>
                 </div>
               </div>
               <DialogFooter>
@@ -226,9 +228,9 @@ export default function BankAccountsPage() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Verifying...
+                      Saving...
                     </>
-                  ) : 'Link for Payouts'}
+                  ) : 'Link Account'}
                 </Button>
               </DialogFooter>
             </form>
@@ -260,7 +262,7 @@ export default function BankAccountsPage() {
                   </DropdownMenu>
                 </div>
                 <CardTitle className="mt-4 font-bold">{acc.bankName}</CardTitle>
-                <CardDescription className="text-xs truncate">{acc.bankAddress || 'Authorized Branch'}</CardDescription>
+                <CardDescription className="text-xs truncate">{acc.bankAddress || 'Verified Branch'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -276,11 +278,11 @@ export default function BankAccountsPage() {
                     {acc.isDefault ? (
                       <div className="flex items-center gap-1.5 text-[10px] text-accent font-bold uppercase tracking-widest bg-accent/10 px-2 py-1 rounded-full">
                         <CheckCircle2 className="w-3 h-3" />
-                        Primary Source
+                        Primary
                       </div>
                     ) : (
                       <div className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3" /> Verified for ACH
+                        <ShieldCheck className="w-3 h-3" /> Verified
                       </div>
                     )}
                   </div>
@@ -294,9 +296,9 @@ export default function BankAccountsPage() {
               <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border flex items-center justify-center mb-6">
                 <Plus className="w-8 h-8 text-accent" />
               </div>
-              <CardTitle className="text-lg">No Source Accounts</CardTitle>
+              <CardTitle className="text-lg">No Linked Accounts</CardTitle>
               <CardDescription className="max-w-[240px] mt-2">
-                Add your business bank account to enable ACH and e-check payouts.
+                Link a business account to enable e-check and ACH issuance.
               </CardDescription>
             </Card>
           )}

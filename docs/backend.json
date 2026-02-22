@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "BankAccount": {
@@ -8,7 +9,7 @@
         "bankName": { "type": "string" },
         "bankAddress": { "type": "string", "description": "Physical address of the bank branch" },
         "routingNumber": { "type": "string" },
-        "accountNumber": { "type": "string", "description": "Masked account number" },
+        "accountNumber": { "type": "string", "description": "Full account number for MICR and ACH source" },
         "fractionalRouting": { "type": "string", "description": "The fractional form of the routing number found on checks" },
         "isDefault": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
