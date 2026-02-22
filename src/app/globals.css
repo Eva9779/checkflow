@@ -56,14 +56,18 @@
     overflow: visible !important;
   }
 
-  /* Hide the entire dashboard UI */
+  /* Aggressively hide the entire dashboard UI and all overlays */
   aside, 
   header, 
   [data-sidebar="trigger"],
   nav,
   .no-print,
   .sidebar-provider,
-  [data-sidebar="wrapper"] {
+  [data-sidebar="wrapper"],
+  [data-sidebar="sidebar"],
+  [role="dialog"],
+  .toaster,
+  .sidebar-rail {
     display: none !important;
   }
 
@@ -84,6 +88,7 @@
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
+    z-index: 1000 !important;
   }
 
   .check-print-container {
