@@ -5,7 +5,7 @@ import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, ShieldCheck, Pencil, Lock, Check, Download } from 'lucide-react';
+import { ArrowLeft, Loader2, ShieldCheck, Pencil, Lock, Check, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SignaturePad } from '@/components/dashboard/signature-pad';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -102,7 +102,9 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
   };
 
   const handlePrint = () => {
-    window.print();
+    if (typeof window !== 'undefined') {
+      window.print();
+    }
   };
 
   return (
@@ -121,6 +123,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               <p className="text-[9px] text-accent font-medium">Select 'Save as PDF' to download</p>
             </div>
             <Button 
+              type="button"
               onClick={handlePrint} 
               className="bg-primary hover:bg-primary/90 text-white font-bold px-8 h-12 rounded-xl shadow-sm cursor-pointer relative z-50"
             >
@@ -295,7 +298,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                       <img 
                         src={endorsementSignature} 
                         alt="Endorsement" 
-                        className="max-h-[32px] w-auto object-contain mix-blend-multiply mb-[-1px]" 
+                        className="max-h-[32px] w-auto object-contain mix-blend-multiply mb-[-1px] absolute top-[-10px]" 
                       />
                     )}
                   </div>
