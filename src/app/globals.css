@@ -74,6 +74,14 @@
   }
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .micr-line {
   font-family: 'Courier New', Courier, monospace;
   font-weight: 600;
