@@ -49,6 +49,16 @@
     size: letter;
     margin: 0;
   }
+  
+  /* Hide the entire dashboard furniture */
+  aside, 
+  header, 
+  [data-sidebar="trigger"],
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
   body {
     background-color: white !important;
     color: black !important;
@@ -56,19 +66,34 @@
     margin: 0 !important;
     -webkit-print-color-adjust: exact;
   }
-  .no-print {
-    display: none !important;
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    background: transparent !important;
   }
-  .check-container {
+
+  .check-print-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5in;
+    padding-top: 0.5in;
+  }
+
+  .check-wrapper {
+    transform: none !important;
+    margin: 0 !important;
     box-shadow: none !important;
     border: none !important;
-    margin: 0 !important;
-    padding: 0.5in !important;
-    width: 8.5in !important;
-    height: auto !important;
-    background: white !important;
-    overflow: visible !important;
   }
+
   .print-page-break {
     page-break-before: always !important;
   }
