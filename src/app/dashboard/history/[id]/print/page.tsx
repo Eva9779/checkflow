@@ -38,7 +38,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   const { data: account, isLoading: accLoading } = useDoc<BankAccount>(accountRef);
 
-  // Set default bank name once when account data is loaded
   useEffect(() => {
     if (account?.bankName && !hasSetDefaultBank) {
       setDepositBankName(account.bankName);
@@ -170,7 +169,8 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
         {/* Front Side */}
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0">
           <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-8 print:border-[1.5px]">
-            <div className="flex justify-between items-start mb-2">
+            {/* Top Payer Info */}
+            <div className="flex justify-between items-start">
               <div className="space-y-0.5">
                 <p className="font-extrabold text-xl uppercase tracking-tight leading-none">{payerName}</p>
                 <div className="text-[11px] font-bold leading-tight max-w-[320px] uppercase opacity-90">
@@ -191,7 +191,8 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            <div className="flex items-end gap-2 mb-6 mt-8">
+            {/* Payee Row - Positioned precisely */}
+            <div className="flex items-end gap-2 mt-10">
               <span className="text-[12px] font-black uppercase min-w-[120px] pb-1">Pay to the Order of:</span>
               <div className="flex-1 border-b-[2px] border-black pb-1 font-black text-2xl uppercase tracking-tight">
                 {payeeName}
@@ -204,18 +205,20 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            <div className="flex items-end gap-2 mb-6">
-              <div className="flex-1 border-b-[2px] border-black pb-1 italic text-[16px] font-black tracking-tight">
+            {/* Amount in Words Row */}
+            <div className="flex items-end gap-2 mt-6">
+              <div className="flex-1 border-b-[2px] border-black pb-1 italic text-[18px] font-black tracking-tight">
                 {amountInWords(transaction.amount)}
               </div>
             </div>
 
-            <div className="absolute bottom-[1.3in] left-8">
+            {/* Bank Info and Signature/Memo Row - Positioned Absolute from Bottom to prevent overlap */}
+            <div className="absolute bottom-[1.4in] left-8">
                <p className="text-[9px] font-black uppercase tracking-widest opacity-70">Financial Institution</p>
                <p className="font-black text-[15px] leading-tight uppercase">{bankName}</p>
             </div>
 
-            <div className="absolute bottom-[1.2in] right-8 left-[3in] flex items-end gap-10">
+            <div className="absolute bottom-[1.0in] right-8 left-[3.2in] flex items-end gap-10">
               <div className="flex-1 flex items-center gap-2">
                 <span className="text-[11px] font-black uppercase pb-0.5">Memo:</span>
                 <div className="flex-1 border-b-[2px] border-black pb-0.5 text-sm font-black truncate">
@@ -223,12 +226,12 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
               <div className="w-[2.8in] flex flex-col items-center">
-                <div className="h-16 w-full flex items-center justify-center overflow-hidden">
+                <div className="h-16 w-full flex items-center justify-center relative">
                   {transaction.signatureData && (
                     <img 
                       src={transaction.signatureData} 
                       alt="Authorized Signature" 
-                      className="max-h-full max-w-full object-contain mix-blend-multiply" 
+                      className="absolute bottom-1 max-h-[80px] max-w-full object-contain mix-blend-multiply" 
                     />
                   )}
                 </div>
@@ -253,8 +256,8 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 <div className="relative">
                   <p className="text-[11px] font-black uppercase tracking-widest text-black/50 mb-4">Endorse Here</p>
                   
-                  {/* Signature Overlay - Positioned to sit on top line */}
-                  <div className="absolute top-[20px] left-0 w-full h-[60px] pointer-events-none flex items-center justify-center z-10">
+                  {/* Signature Overlay - Perfectly aligned to sit on the top line */}
+                  <div className="absolute top-[24px] left-0 w-full h-[60px] pointer-events-none flex items-center justify-center z-10">
                     {endorsementSignature && (
                       <img 
                         src={endorsementSignature} 
