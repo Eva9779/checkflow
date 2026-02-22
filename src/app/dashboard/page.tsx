@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy, where } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
+import { TransactionList } from '@/components/dashboard/transaction-list';
 
 export default function DashboardOverview() {
   const db = useFirestore();
