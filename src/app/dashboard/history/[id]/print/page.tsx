@@ -262,48 +262,48 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          <div className="w-[3.25in] h-full border-l-[2px] border-black/30 bg-white p-5">
+          <div className="w-[3.25in] h-full border-l-[2px] border-black/30 bg-white p-4">
             <div className="relative h-full flex flex-col">
               <p className="text-[10pt] font-black uppercase tracking-[0.1em] text-black mb-1">Endorse Here</p>
               
               <div className="relative w-full">
-                <div className="relative border-b-2 border-black w-full h-12 flex items-end justify-center">
+                <div className="relative border-b-2 border-black w-full h-10 flex items-end justify-center">
                   {endorsementSignature && (
                     <img 
                       src={endorsementSignature} 
                       alt="Endorsement" 
-                      className="max-h-[55px] w-auto object-contain mix-blend-multiply absolute bottom-1" 
+                      className="max-h-[50px] w-auto object-contain mix-blend-multiply absolute bottom-1" 
                     />
                   )}
                 </div>
-                <div className="border-b-2 border-black w-full h-8"></div>
-                <div className="border-b-2 border-black w-full h-8"></div>
+                <div className="border-b-2 border-black w-full h-6"></div>
+                <div className="border-b-2 border-black w-full h-6"></div>
               </div>
 
-              <div className="mt-4 space-y-4">
+              <div className="mt-2 space-y-3">
                 {isMobileDeposit && (
                   <div className="text-[9pt] font-bold uppercase leading-tight text-black p-2 bg-slate-50 border-2 border-black/10 rounded-sm">
                     For Mobile Deposit Only <br/> 
                     {depositBankName && (
-                      <span className="text-[8pt] text-primary tracking-tight mt-1 block font-black">
+                      <span className="text-[8pt] text-primary tracking-tight mt-0.5 block font-black">
                         at {depositBankName}
                       </span>
                     )}
                   </div>
                 )}
 
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 border-[3px] border-black flex items-center justify-center shrink-0 bg-white shadow-sm">
-                    {isMobileDeposit && <Check className="w-6 h-6 text-black stroke-[4px]" />}
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 border-[3px] border-black flex items-center justify-center shrink-0 bg-white shadow-sm">
+                    {isMobileDeposit && <Check className="w-5 h-5 text-black stroke-[4px]" />}
                   </div>
-                  <span className="text-[10pt] font-black uppercase text-black leading-tight tracking-tight">
+                  <span className="text-[9pt] font-black uppercase text-black leading-tight tracking-tight">
                     Check here for mobile deposit
                   </span>
                 </div>
               </div>
               
-              <div className="mt-auto border-t-2 border-black/20 border-dashed pt-2">
-                <p className="text-[7.5pt] text-center font-black uppercase text-black/40">
+              <div className="mt-auto border-t-2 border-black/20 border-dashed pt-1">
+                <p className="text-[7pt] text-center font-black uppercase text-black/40">
                   DO NOT WRITE BELOW THIS LINE
                 </p>
               </div>
