@@ -95,9 +95,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md bg-primary text-white py-2 px-4 rounded-t-xl text-center text-[11px] font-bold flex items-center justify-center gap-2 shadow-sm border-x border-t">
+      <div className="w-full max-w-md bg-primary text-white py-2.5 px-4 rounded-t-xl text-center text-[11px] font-bold flex items-center justify-center gap-2 shadow-sm border-x border-t">
         <Phone className="w-3 h-3" />
-        We print and we mail bulk checks. Call now: 1-213-603-6351
+        We print and we mail bulk checks. Place your order now at 1-213-603-6351
       </div>
       <Card className="w-full max-w-md shadow-xl border-t-0 rounded-t-none border-none">
         <CardHeader className="text-center">
