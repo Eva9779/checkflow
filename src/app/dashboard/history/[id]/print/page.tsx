@@ -168,81 +168,79 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
       <div className="max-w-[8.5in] mx-auto space-y-12 pb-20">
         {/* Front Side */}
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0">
-          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-8 print:border-[1.5px]">
-            {/* Top Payer Info */}
+          <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-6 print:border-[1.5px] flex flex-col justify-between">
+            {/* Top Row: Payer & Check Info */}
             <div className="flex justify-between items-start">
               <div className="space-y-0.5">
-                <p className="font-extrabold text-xl uppercase tracking-tight leading-none">{payerName}</p>
-                <div className="text-[11px] font-bold leading-tight max-w-[320px] uppercase opacity-90">
+                <p className="font-black text-xl uppercase tracking-tight leading-none mb-1">{payerName}</p>
+                <div className="text-[10px] font-bold leading-tight max-w-[280px] uppercase opacity-80">
                   {payerAddress}
                 </div>
               </div>
               <div className="text-right flex flex-col items-end">
-                <p className="text-3xl font-black font-mono tracking-tighter leading-none mb-1">{checkNumber}</p>
-                {fractionalRouting && (
-                  <p className="text-[9px] font-black text-slate-600 mb-2">{fractionalRouting}</p>
-                )}
-                <div className="flex items-center justify-end gap-2 mt-1">
+                <p className="text-2xl font-black font-mono tracking-tighter leading-none mb-2">{checkNumber}</p>
+                <div className="flex items-center justify-end gap-2">
                   <span className="text-[11px] uppercase font-black">Date:</span>
-                  <div className="border-b-[1.5px] border-black min-w-[150px] text-center font-mono py-1 font-black text-xl">
+                  <div className="border-b-[1.5px] border-black min-w-[140px] text-center font-mono py-1 font-black text-lg">
                     {transaction.initiatedAt}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Payee Row - Positioned precisely */}
-            <div className="flex items-end gap-2 mt-10">
-              <span className="text-[12px] font-black uppercase min-w-[120px] pb-1">Pay to the Order of:</span>
-              <div className="flex-1 border-b-[2px] border-black pb-1 font-black text-2xl uppercase tracking-tight">
-                {payeeName}
+            {/* Middle Section: Payee and Amount */}
+            <div className="space-y-8">
+              <div className="flex items-end gap-2">
+                <span className="text-[11px] font-black uppercase min-w-[110px] pb-1">Pay to the Order of:</span>
+                <div className="flex-1 border-b-[2px] border-black pb-1 font-black text-2xl uppercase tracking-tight">
+                  {payeeName}
+                </div>
+                <div className="relative flex items-center ml-4">
+                  <span className="absolute left-2 font-black text-xl">$</span>
+                  <div className="border-[2.5px] border-black px-4 py-2 min-w-[160px] text-right font-mono text-2xl bg-white font-black">
+                    {transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
               </div>
-              <div className="relative flex items-center ml-4">
-                <span className="absolute left-2 font-black text-2xl">$</span>
-                <div className="border-[2.5px] border-black px-4 py-3 min-w-[180px] text-right font-mono text-3xl bg-white font-black">
-                  {transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+
+              <div className="flex items-end gap-2">
+                <div className="flex-1 border-b-[2px] border-black pb-1 italic text-[16px] font-black tracking-tight">
+                  {amountInWords(transaction.amount)}
                 </div>
               </div>
             </div>
 
-            {/* Amount in Words Row */}
-            <div className="flex items-end gap-2 mt-6">
-              <div className="flex-1 border-b-[2px] border-black pb-1 italic text-[18px] font-black tracking-tight">
-                {amountInWords(transaction.amount)}
+            {/* Bottom Row: Bank Info and Memo/Signature */}
+            <div className="grid grid-cols-12 gap-4 items-end pb-8">
+              <div className="col-span-4">
+                <p className="text-[8px] font-black uppercase tracking-widest opacity-60 mb-1">Financial Institution</p>
+                <p className="font-black text-[13px] leading-tight uppercase">{bankName}</p>
               </div>
-            </div>
-
-            {/* Bank Info and Signature/Memo Row - Positioned Absolute from Bottom to prevent overlap */}
-            <div className="absolute bottom-[1.4in] left-8">
-               <p className="text-[9px] font-black uppercase tracking-widest opacity-70">Financial Institution</p>
-               <p className="font-black text-[15px] leading-tight uppercase">{bankName}</p>
-            </div>
-
-            <div className="absolute bottom-[1.0in] right-8 left-[3.2in] flex items-end gap-10">
-              <div className="flex-1 flex items-center gap-2">
-                <span className="text-[11px] font-black uppercase pb-0.5">Memo:</span>
-                <div className="flex-1 border-b-[2px] border-black pb-0.5 text-sm font-black truncate">
+              <div className="col-span-4 flex items-end">
+                <span className="text-[10px] font-black uppercase pb-1 mr-2">Memo:</span>
+                <div className="flex-1 border-b-[1.5px] border-black pb-1 text-xs font-black truncate">
                   {transaction.memo}
                 </div>
               </div>
-              <div className="w-[2.8in] flex flex-col items-center">
-                <div className="h-16 w-full flex items-center justify-center relative">
+              <div className="col-span-4 flex flex-col items-center">
+                <div className="h-12 w-full flex items-center justify-center relative">
                   {transaction.signatureData && (
                     <img 
                       src={transaction.signatureData} 
                       alt="Authorized Signature" 
-                      className="absolute bottom-1 max-h-[80px] max-w-full object-contain mix-blend-multiply" 
+                      className="absolute bottom-1 max-h-[60px] max-w-full object-contain mix-blend-multiply" 
                     />
                   )}
                 </div>
-                <div className="w-full border-b-[2px] border-black"></div>
-                <p className="text-[9px] text-center uppercase font-black tracking-tighter opacity-80 mt-1">
+                <div className="w-full border-b-[1.5px] border-black"></div>
+                <p className="text-[8px] text-center uppercase font-black tracking-tighter opacity-70 mt-1">
                   Authorized Signature
                 </p>
               </div>
             </div>
 
-            <div className="absolute bottom-6 left-0 w-full flex justify-center micr-line text-[24px] tracking-[0.48em] text-black font-bold">
+            {/* MICR LINE - Absolute Bottom */}
+            <div className="absolute bottom-4 left-0 w-full flex justify-center micr-line text-[22px] tracking-[0.45em] text-black font-bold">
                ⑈{checkNumber}⑈ ⑆{routingNumber}⑆ {accountNumber}⑈
             </div>
           </div>
@@ -256,13 +254,13 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 <div className="relative">
                   <p className="text-[11px] font-black uppercase tracking-widest text-black/50 mb-4">Endorse Here</p>
                   
-                  {/* Signature Overlay - Perfectly aligned to sit on the top line */}
-                  <div className="absolute top-[24px] left-0 w-full h-[60px] pointer-events-none flex items-center justify-center z-10">
+                  {/* Signature Overlay - High Contrast and Correct Alignment */}
+                  <div className="absolute top-[28px] left-0 w-full h-[80px] pointer-events-none flex items-center justify-center z-10">
                     {endorsementSignature && (
                       <img 
                         src={endorsementSignature} 
                         alt="Endorsement Signature" 
-                        className="max-h-full max-w-full object-contain mix-blend-multiply" 
+                        className="max-h-full max-w-full object-contain mix-blend-multiply scale-125" 
                       />
                     )}
                   </div>
@@ -279,21 +277,21 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                     <div className="w-6 h-6 border-[2px] border-black flex items-center justify-center bg-white shrink-0 mt-0.5">
                       {isMobileDeposit && <div className="w-4 h-4 bg-black" />}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <span className="text-[10px] font-black uppercase text-black block mb-2 leading-none">
                         Check here for mobile deposit
                       </span>
                       {isMobileDeposit && (
-                        <div className="text-[11px] font-black uppercase leading-snug text-black bg-black/5 p-2.5 rounded border border-black/10">
+                        <div className="text-[12px] font-black uppercase leading-snug text-black bg-white/80 p-3 rounded border-2 border-black/20 shadow-sm">
                           For Mobile Deposit Only <br/> 
-                          <span className="text-[12px]">{depositBankName ? `at ${depositBankName}` : ''}</span>
+                          <span className="text-[13px] text-accent">{depositBankName ? `at ${depositBankName}` : ''}</span>
                         </div>
                       )}
                     </div>
                   </div>
                   
-                  <div className="border-t-[2px] border-black border-dashed pt-4">
-                    <p className="text-[11px] text-center font-black uppercase text-black/80 leading-tight">
+                  <div className="border-t-[2.5px] border-black border-dashed pt-4 mt-8">
+                    <p className="text-[11px] text-center font-black uppercase text-black leading-tight">
                       DO NOT WRITE, STAMP, OR SIGN BELOW THIS LINE
                     </p>
                     <p className="text-[8px] text-center uppercase opacity-50 mt-1 font-bold">Reserved for Financial Institution Use Only</p>
