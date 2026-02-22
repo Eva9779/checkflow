@@ -223,23 +223,24 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             {/* Endorsement Area - Standard Side Layout */}
             <div className="absolute top-0 right-0 w-[3.5in] h-full border-l-[1.5px] border-black/10 bg-white/30 p-8">
               <div className="space-y-6">
-                <div>
+                <div className="relative">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Endorse Here</p>
-                  <div className="space-y-8">
-                    <div className="border-b-[1.5px] border-black/40 w-full"></div>
-                    <div className="border-b-[1.5px] border-black/40 w-full"></div>
-                    <div className="border-b-[1.5px] border-black/40 w-full"></div>
+                  {/* Endorsement Signature Overlay */}
+                  <div className="absolute top-6 left-0 w-full h-32 pointer-events-none flex items-center justify-center z-10">
+                    {endorsementSignature && (
+                      <img 
+                        src={endorsementSignature} 
+                        alt="Endorsement Signature" 
+                        className="max-h-full max-w-full object-contain mix-blend-multiply" 
+                      />
+                    )}
                   </div>
-                </div>
-
-                <div className="relative h-20 flex items-center justify-center">
-                  {endorsementSignature && (
-                    <img 
-                      src={endorsementSignature} 
-                      alt="Endorsement Signature" 
-                      className="max-h-full max-w-full object-contain mix-blend-multiply" 
-                    />
-                  )}
+                  
+                  <div className="space-y-8">
+                    <div className="border-b-[1.5px] border-black/40 w-full h-8"></div>
+                    <div className="border-b-[1.5px] border-black/40 w-full h-8"></div>
+                    <div className="border-b-[1.5px] border-black/40 w-full h-8"></div>
+                  </div>
                 </div>
 
                 {isMobileDeposit && (
