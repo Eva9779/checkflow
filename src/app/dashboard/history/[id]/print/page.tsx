@@ -45,11 +45,13 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
     }
   }, [account, hasInitializedBank]);
 
-  const handlePrint = () => {
-    if (typeof window !== 'undefined') {
-      window.print();
-    }
-  };
+  if (txLoading || accLoading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="w-10 h-10 animate-spin text-accent" />
+    </div>
+  );
+
+  if (!transaction) return <div className="p-20 text-center font-bold">Transaction record not found.</div>;
 
   const payerName = user?.displayName || 'Authorized Business Entity';
   const payeeName = transaction?.recipientName || 'Valued Recipient';
@@ -99,14 +101,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
     return `*** ${result.trim()} and ${cents.toString().padStart(2, '0')}/100 Dollars ***`;
   };
 
-  if (txLoading || accLoading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Loader2 className="w-10 h-10 animate-spin text-accent" />
-    </div>
-  );
-
-  if (!transaction) return <div className="p-20 text-center font-bold">Transaction record not found.</div>;
-
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto no-print mb-8 space-y-6">
@@ -118,8 +112,8 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             <h2 className="text-xl font-headline font-bold px-2">E-Check Verification</h2>
           </div>
           <Button 
-            onClick={handlePrint} 
-            className="bg-accent hover:bg-accent/90 text-white font-bold px-8 h-12 rounded-xl shadow-sm cursor-pointer relative z-20"
+            onClick={() => window.print()} 
+            className="bg-accent hover:bg-accent/90 text-white font-bold px-8 h-12 rounded-xl shadow-sm cursor-pointer"
           >
             <Printer className="w-5 h-5 mr-2" /> Print for Bank Deposit
           </Button>
