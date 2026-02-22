@@ -13,99 +13,59 @@ service cloud.firestore {
      * DATA STRUCTURE:
      * - Private user data (Profiles, Bank Accounts, Payment Requests) is nested under /users/{userId}.
      * - Collaborative data (E-Check Transactions) is stored in a top-level collection.
-     *
-     * KEY SECURITY DECISIONS:
-     * 1. Authorization Independence: All rules rely solely on the document's own data or path 
-     *    parameters. No cross-document get() calls are used, ensuring high performance.
-     * 2. Denormalization for Security: Critical IDs (like senderUserProfileId) are required 
-     *    within documents to allow immediate authorization checks during reads and writes.
-     * 3. Ownership Immutability: Fields that link a document to a user (e.g., userProfileId) 
-     *    are enforced as immutable during updates to prevent data hijacking.
-     * 4. Prototyping Flexibility: While authorization is strictly enforced, the specific 
-     *    shape of non-relational data (e.g., bankName, amounts) is not validated to allow 
-     *    for rapid iteration.
      */
 
     // --- Helper Functions ---
 
-    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the authenticated user's UID matches the provided userId. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks if the user owns the existing document for state-changing operations. */
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
-    /** @description Checks if the authenticated user is either the sender or receiver in a transaction. */
     function isPartyToTransaction(data) {
-      return isSignedIn() && (request.auth.uid == data.senderUserProfileId || request.auth.uid == data.receiverUserProfileId);
+      return isSignedIn() && (
+        data.senderUserProfileId == request.auth.uid || 
+        data.receiverUserProfileId == request.auth.uid
+      );
     }
 
     // --- Collection Rules ---
 
-    /**
-     * @description Rules for UserProfile. Users can only manage their own profile.
-     * @path /users/{userId}
-     * @allow (create) if auth.uid == "abc" and request.resource.data.id == "abc"
-     * @deny (get) if auth.uid == "abc" and path userId is "xyz"
-     * @principle Pattern 4 (Self-Creation) and Pattern 1 (Ownership).
-     */
     match /users/{userId} {
       allow get, list: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow update: if isOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isOwner(userId);
 
-      /**
-       * @description Rules for BankAccounts. Restricts access to the linked account owner.
-       * @path /users/{userId}/bankAccounts/{bankAccountId}
-       * @allow (create) if auth.uid == "user1" and data.userProfileId == "user1"
-       * @deny (update) if attempting to change the userProfileId.
-       * @principle Pattern 1 (Ownership) and Relational Integrity.
-       */
       match /bankAccounts/{bankAccountId} {
         allow get, list: if isOwner(userId);
         allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == resource.data.userProfileId;
-        allow delete: if isExistingOwner(userId);
+        allow update: if isOwner(userId) && request.resource.data.userProfileId == resource.data.userProfileId;
+        allow delete: if isOwner(userId);
       }
 
-      /**
-       * @description Rules for PaymentRequests. Only the requestor can view or manage their requests.
-       * @path /users/{userId}/paymentRequests/{paymentRequestId}
-       * @allow (get) if auth.uid matches the userId in the path.
-       * @deny (create) if requestorUserProfileId in data does not match the userId in the path.
-       * @principle Pattern 1 (Ownership) and Relational Integrity.
-       */
       match /paymentRequests/{paymentRequestId} {
         allow get, list: if isOwner(userId);
         allow create: if isOwner(userId) && request.resource.data.requestorUserProfileId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.requestorUserProfileId == resource.data.requestorUserProfileId;
-        allow delete: if isExistingOwner(userId);
+        allow update: if isOwner(userId) && request.resource.data.requestorUserProfileId == resource.data.requestorUserProfileId;
+        allow delete: if isOwner(userId);
       }
     }
 
-    /**
-     * @description Rules for ECheckTransactions. Access is granted to both senders and receivers.
-     * @path /eCheckTransactions/{transactionId}
-     * @allow (get) if auth.uid == resource.data.senderUserProfileId
-     * @allow (list) if auth.uid == resource.data.receiverUserProfileId
-     * @deny (create) if the authenticated user is not the designated sender.
-     * @principle Pattern 3 (Shared Access) via denormalized identity fields.
-     */
     match /eCheckTransactions/{transactionId} {
-      allow get, list: if isPartyToTransaction(resource.data);
-      allow create: if isSignedIn() && request.resource.data.senderUserProfileId == request.auth.uid;
-      allow update: if resource != null && isPartyToTransaction(resource.data) && request.resource.data.senderUserProfileId == resource.data.senderUserProfileId;
-      allow delete: if resource != null && isPartyToTransaction(resource.data);
+      // Use resource.data for both single get and collection list queries
+      allow read: if isPartyToTransaction(resource.data);
+      
+      allow create: if isSignedIn() && 
+                    request.resource.data.senderUserProfileId == request.auth.uid;
+                    
+      allow update: if isPartyToTransaction(resource.data) && 
+                    request.resource.data.senderUserProfileId == resource.data.senderUserProfileId;
+                    
+      allow delete: if isPartyToTransaction(resource.data);
     }
-
   }
 }

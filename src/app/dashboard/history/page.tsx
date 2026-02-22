@@ -6,23 +6,31 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Filter, Download, Loader2 } from 'lucide-react';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Transaction } from '@/lib/types';
 
 export default function TransactionHistoryPage() {
   const db = useFirestore();
   const { user } = useUser();
 
+  // Removing orderBy to avoid complex index requirements that can trip up security rules during prototyping.
+  // We sort client-side instead.
   const transactionsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
       collection(db, 'eCheckTransactions'),
-      where('senderUserProfileId', '==', user.uid),
-      orderBy('initiatedAt', 'desc')
+      where('senderUserProfileId', '==', user.uid)
     );
   }, [db, user]);
 
-  const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
+  const { data: rawTransactions, isLoading } = useCollection<Transaction>(transactionsQuery);
+
+  const transactions = useMemo(() => {
+    if (!rawTransactions) return [];
+    return [...rawTransactions].sort((a, b) => 
+      new Date(b.initiatedAt).getTime() - new Date(a.initiatedAt).getTime()
+    );
+  }, [rawTransactions]);
 
   return (
     <div className="space-y-6">
@@ -50,11 +58,11 @@ export default function TransactionHistoryPage() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider px-2">Recent Transactions</h2>
+        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider px-2">All Transactions</h2>
         {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-accent" /></div>
         ) : (
-          <TransactionList transactions={transactions || []} />
+          <TransactionList transactions={transactions} />
         )}
       </div>
     </div>

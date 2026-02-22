@@ -5,21 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Plus, Wallet, FileText, TrendingUp, Building2, Clock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, limit, orderBy, where } from 'firebase/firestore';
+import { collection, query, limit, where } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { TransactionList } from '@/components/dashboard/transaction-list';
+import { useMemo } from 'react';
 
 export default function DashboardOverview() {
   const db = useFirestore();
   const { user } = useUser();
 
+  // We filter by senderUserProfileId to satisfy security rules.
+  // We remove orderBy temporarily to avoid composite index requirements which can cause permission errors.
+  // Sorting is handled client-side for the overview.
   const transactionsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
       collection(db, 'eCheckTransactions'),
       where('senderUserProfileId', '==', user.uid),
-      orderBy('initiatedAt', 'desc'),
-      limit(5)
+      limit(20)
     );
   }, [db, user]);
 
@@ -28,13 +31,26 @@ export default function DashboardOverview() {
     return collection(db, 'users', user.uid, 'bankAccounts');
   }, [db, user]);
 
-  const { data: transactions, isLoading: txLoading } = useCollection<Transaction>(transactionsQuery);
+  const { data: rawTransactions, isLoading: txLoading } = useCollection<Transaction>(transactionsQuery);
   const { data: accounts, isLoading: accLoading } = useCollection<BankAccount>(accountsQuery);
 
-  const totalSent = (transactions || [])
-    .reduce((acc, tx) => acc + tx.amount, 0);
+  // Client-side sorting and limiting
+  const transactions = useMemo(() => {
+    if (!rawTransactions) return [];
+    return [...rawTransactions]
+      .sort((a, b) => new Date(b.initiatedAt).getTime() - new Date(a.initiatedAt).getTime())
+      .slice(0, 5);
+  }, [rawTransactions]);
 
-  const pendingCount = (transactions || []).filter(tx => tx.status === 'pending').length;
+  const totalSent = useMemo(() => {
+    if (!rawTransactions) return 0;
+    return rawTransactions.reduce((acc, tx) => acc + tx.amount, 0);
+  }, [rawTransactions]);
+
+  const pendingCount = useMemo(() => {
+    if (!rawTransactions) return 0;
+    return rawTransactions.filter(tx => tx.status === 'pending').length;
+  }, [rawTransactions]);
 
   return (
     <div className="space-y-8">
@@ -48,7 +64,7 @@ export default function DashboardOverview() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-primary-foreground/70">Recent sent payments</p>
+            <p className="text-xs text-primary-foreground/70">Total volume from tracked history</p>
           </CardContent>
         </Card>
 
@@ -105,7 +121,7 @@ export default function DashboardOverview() {
           {txLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div>
           ) : (
-            <TransactionList transactions={transactions || []} />
+            <TransactionList transactions={transactions} />
           )}
         </div>
 
