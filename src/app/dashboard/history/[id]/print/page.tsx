@@ -1,3 +1,4 @@
+
 'use client';
 
 import { use, useMemo } from 'react';
@@ -102,10 +103,8 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
       </div>
 
       <div className="max-w-[8.5in] mx-auto space-y-12 pb-20">
-        {/* FRONT OF CHECK - Standard Business Size (8.5" x 3.66") */}
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0">
           <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#fdfdfd] p-8 print:border-[1.5px]">
-            {/* Header: Payer Info and Check Number */}
             <div className="flex justify-between items-start mb-2">
               <div className="space-y-0.5">
                 <p className="font-bold text-lg uppercase tracking-tight leading-none">{payerName}</p>
@@ -127,7 +126,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* Payee and Amount Line */}
             <div className="flex items-end gap-2 mb-4 mt-6">
               <span className="text-[11px] font-extrabold uppercase min-w-[100px] pb-1">Pay to the Order of:</span>
               <div className="flex-1 border-b-[1.5px] border-black pb-1 font-bold text-xl uppercase tracking-tighter">
@@ -141,21 +139,18 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* Amount in Words */}
             <div className="flex items-end gap-2 mb-4">
               <div className="flex-1 border-b-[1.5px] border-black pb-1 italic text-[14px] font-bold tracking-tight">
                 {amountInWords(transaction.amount)}
               </div>
             </div>
 
-            {/* Bank Info (Anchored Above MICR) */}
-            <div className="absolute bottom-[0.8in] left-8">
+            <div className="absolute bottom-[1.0in] left-8">
                <p className="text-[8px] font-bold uppercase tracking-widest opacity-60">Financial Institution</p>
                <p className="font-bold text-[13px] leading-tight uppercase">{bankName}</p>
             </div>
 
-            {/* Memo & Signature (Anchored Above MICR) */}
-            <div className="absolute bottom-[0.8in] right-8 left-[3in] flex items-end gap-8">
+            <div className="absolute bottom-[0.9in] right-8 left-[3in] flex items-end gap-8">
               <div className="flex-1 flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase pb-0.5">Memo:</span>
                 <div className="flex-1 border-b-[1.5px] border-black pb-0.5 text-xs font-bold truncate">
@@ -163,7 +158,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
               <div className="w-[2.5in] flex flex-col items-center">
-                <div className="h-12 w-full flex items-center justify-center">
+                <div className="h-12 w-full flex items-center justify-center overflow-hidden">
                   {transaction.signatureData ? (
                     <img 
                       src={transaction.signatureData} 
@@ -181,22 +176,18 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* MICR Line - Absolute Bottom (Under Signature and Memo) */}
             <div className="absolute bottom-4 left-0 w-full flex justify-center micr-line text-[22px] tracking-[0.45em] text-black">
                ⑆{routingNumber}⑆  {accountNumber}⑈  {checkNumber}
             </div>
           </div>
         </div>
 
-        {/* BACK OF CHECK - Compliance Endorsement Area */}
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0 print-page-break">
           <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#fdfdfd] p-10 rounded-sm">
-            {/* Endorsement Instructions Section */}
             <div className="absolute top-8 right-12 w-[3.5in]">
               <div className="border-b-[2px] border-black w-full mb-1"></div>
               <p className="text-[11px] text-center font-bold uppercase tracking-wider mb-4">Endorse Here</p>
               
-              {/* Mobile Deposit Checkbox */}
               <div className="flex items-center justify-center gap-3 mb-10 bg-slate-50 p-3 rounded border border-dashed border-slate-300">
                 <div className="w-6 h-6 border-2 border-black/20 flex items-center justify-center bg-white">
                   <Square className="w-5 h-5 text-transparent" />
@@ -220,7 +211,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* Security Features Watermark */}
             <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none rotate-[-35deg]">
               <span className="text-7xl font-black uppercase tracking-[0.3em]">Security Document</span>
             </div>
@@ -231,12 +221,6 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 <span className="text-[10px] uppercase font-black tracking-[0.25em]">Verified Digital E-Check</span>
                 <span className="text-[8px] font-bold">Compliant with U.S. Check 21 Processing Standards</span>
               </div>
-            </div>
-
-            {/* Remote Deposit Only Marking */}
-            <div className="absolute top-1/2 left-12 -translate-y-1/2 w-40 border-2 border-black/15 p-3 rounded-md text-center opacity-30">
-              <p className="text-[9px] font-bold uppercase leading-tight">For Remote Deposit Only</p>
-              <p className="text-[7px] mt-1 font-medium">DO NOT NEGOTIATE AT COUNTER</p>
             </div>
           </div>
         </div>

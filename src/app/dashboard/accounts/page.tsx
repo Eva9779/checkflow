@@ -119,7 +119,14 @@ export default function BankAccountsPage() {
     if (!db || !user || !accounts) return;
     accounts.forEach(acc => {
       const ref = doc(db, 'users', user.uid, 'accounts', acc.id);
-      updateDoc(ref, { isDefault: acc.id === id });
+      updateDoc(ref, { isDefault: acc.id === id }).catch(async () => {
+        const permissionError = new FirestorePermissionError({
+          path: ref.path,
+          operation: 'update',
+          requestResourceData: { isDefault: acc.id === id }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
     });
   };
 

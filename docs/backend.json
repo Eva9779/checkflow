@@ -7,10 +7,10 @@
       "type": "object",
       "properties": {
         "bankName": { "type": "string" },
-        "bankAddress": { "type": "string", "description": "Physical address of the bank branch" },
+        "bankAddress": { "type": "string" },
         "routingNumber": { "type": "string" },
-        "accountNumber": { "type": "string", "description": "Full account number for MICR and ACH source" },
-        "fractionalRouting": { "type": "string", "description": "The fractional form of the routing number found on checks" },
+        "accountNumber": { "type": "string" },
+        "fractionalRouting": { "type": "string" },
         "isDefault": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -18,25 +18,29 @@
     },
     "Transaction": {
       "title": "Transaction",
-      "description": "An e-check payment record.",
+      "description": "An e-check or ACH payout record.",
       "type": "object",
       "properties": {
-        "type": { "type": "string", "enum": ["sent", "received", "requested"] },
+        "type": { "type": "string", "enum": ["sent"] },
         "recipientName": { "type": "string" },
-        "recipientAddress": { "type": "string", "description": "Payee address for physical check mailing" },
+        "recipientAddress": { "type": "string" },
+        "recipientRouting": { "type": "string" },
+        "recipientAccount": { "type": "string" },
         "amount": { "type": "number" },
         "memo": { "type": "string" },
         "status": { "type": "string", "enum": ["completed", "pending", "failed"] },
         "date": { "type": "string", "format": "date" },
-        "checkNumber": { "type": "string", "description": "Unique check identification number" },
+        "checkNumber": { "type": "string" },
         "fromAccountId": { "type": "string" },
         "payerBankName": { "type": "string" },
         "payerRoutingNumber": { "type": "string" },
         "payerAccountNumber": { "type": "string" },
-        "payerBankAddress": { "type": "string" },
-        "signatureData": { "type": "string", "description": "Base64 encoded signature image for authorization" }
+        "deliveryMethod": { "type": "string", "enum": ["print", "stripe"] },
+        "signatureData": { "type": "string" },
+        "stripeTransferId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["type", "recipientName", "amount", "status", "date"]
+      "required": ["recipientName", "amount", "status", "date", "deliveryMethod"]
     }
   },
   "auth": {
@@ -45,11 +49,11 @@
   "firestore": {
     "/users/{userId}/accounts/{accountId}": {
       "schema": "BankAccount",
-      "description": "User-specific bank accounts"
+      "description": "Stored business source bank accounts"
     },
     "/users/{userId}/transactions/{transactionId}": {
       "schema": "Transaction",
-      "description": "User-specific payment history"
+      "description": "Records of issued payouts"
     }
   }
 }
