@@ -1,18 +1,25 @@
 'use client';
 
-import { use, useMemo } from 'react';
+import { use, useState, useMemo } from 'react';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, ShieldCheck, Square } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2, ShieldCheck, Square, CheckSquare, Pencil, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { SignaturePad } from '@/components/dashboard/signature-pad';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function PrintCheckPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const db = useFirestore();
   const { user } = useUser();
+
+  const [isMobileDeposit, setIsMobileDeposit] = useState(false);
+  const [endorsementSignature, setEndorsementSignature] = useState<string | null>(null);
 
   const transactionRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -87,21 +94,52 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto no-print mb-8 flex justify-between items-center bg-white p-6 rounded-xl shadow-lg border">
-        <div className="space-y-1">
-          <Button variant="ghost" onClick={() => router.back()} className="h-8">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to History
-          </Button>
-          <h2 className="text-xl font-bold px-2">E-Check Verification</h2>
+      {/* Preparation Area (No-Print) */}
+      <div className="max-w-4xl mx-auto no-print mb-8 space-y-6">
+        <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-lg border">
+          <div className="space-y-1">
+            <Button variant="ghost" onClick={() => router.back()} className="h-8">
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to History
+            </Button>
+            <h2 className="text-xl font-bold px-2">E-Check Verification</h2>
+          </div>
+          <div className="flex gap-4">
+            <Button onClick={() => window.print()} className="bg-accent hover:bg-accent/90 text-white font-bold px-8 h-12">
+              <Printer className="w-5 h-5 mr-2" /> Print for Bank Deposit
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-4">
-          <Button onClick={() => window.print()} className="bg-accent hover:bg-accent/90 text-white font-bold px-8 h-12">
-            <Printer className="w-5 h-5 mr-2" /> Print for Bank Deposit
-          </Button>
-        </div>
+
+        <Card className="border-none shadow-md overflow-hidden">
+          <CardHeader className="bg-secondary/30 border-b">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-accent" /> Endorsement Preparation
+            </CardTitle>
+            <CardDescription>
+              Prepare the back of the check for mobile or physical deposit by signing below.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-6">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="mobile-deposit" 
+                checked={isMobileDeposit} 
+                onCheckedChange={(checked) => setIsMobileDeposit(!!checked)}
+              />
+              <Label htmlFor="mobile-deposit" className="text-sm font-medium leading-none cursor-pointer">
+                Mark as Mobile Deposit
+              </Label>
+            </div>
+            <div className="space-y-4">
+              <Label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Recipient Endorsement Signature</Label>
+              <SignaturePad onSave={(data) => setEndorsementSignature(data)} onClear={() => setEndorsementSignature(null)} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="max-w-[8.5in] mx-auto space-y-12 pb-20">
+        {/* Front Side */}
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0">
           <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-8 print:border-[1.5px]">
             <div className="flex justify-between items-start mb-2">
@@ -158,14 +196,12 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               </div>
               <div className="w-[2.5in] flex flex-col items-center">
                 <div className="h-12 w-full flex items-center justify-center overflow-hidden">
-                  {transaction.signatureData ? (
+                  {transaction.signatureData && (
                     <img 
                       src={transaction.signatureData} 
                       alt="Authorized Signature" 
                       className="max-h-full max-w-full object-contain mix-blend-multiply" 
                     />
-                  ) : (
-                    <div className="italic text-[10px] text-muted-foreground pb-2">Authorized Signature Required</div>
                   )}
                 </div>
                 <div className="w-full border-b-[1.5px] border-black"></div>
@@ -176,30 +212,45 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
             </div>
 
             <div className="absolute bottom-4 left-0 w-full flex justify-center micr-line text-[22px] tracking-[0.45em] text-black">
-               ⑆{routingNumber}⑆  {accountNumber}⑈  {checkNumber}
+               ⑈{checkNumber}⑈ ⑆{routingNumber}⑆ {accountNumber}⑈
             </div>
           </div>
         </div>
 
+        {/* Back Side */}
         <div className="bg-white shadow-2xl check-container border-[1px] border-black/5 rounded-sm overflow-hidden p-8 print:p-0 print-page-break">
           <div className="relative border-[1.5px] border-black h-[3.66in] w-full bg-[#f0f9ff] p-10 rounded-sm">
             <div className="absolute top-8 right-12 w-[3.5in]">
               <div className="border-b-[2px] border-black w-full mb-1"></div>
               <p className="text-[11px] text-center font-bold uppercase tracking-wider mb-4">Endorse Here</p>
               
-              <div className="flex items-center justify-center gap-3 mb-10 bg-slate-50/50 p-3 rounded border border-dashed border-slate-300">
-                <div className="w-6 h-6 border-2 border-black/20 flex items-center justify-center bg-white">
-                  <Square className="w-5 h-5 text-transparent" />
+              <div className="flex items-center justify-center gap-3 mb-4 bg-white/50 p-3 rounded border border-dashed border-slate-300">
+                <div className="w-6 h-6 border-2 border-black flex items-center justify-center bg-white">
+                  {isMobileDeposit ? (
+                    <CheckSquare className="w-5 h-5 text-black" />
+                  ) : (
+                    <Square className="w-5 h-5 text-transparent" />
+                  )}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-tight text-black/70">
+                <span className="text-[10px] font-bold uppercase tracking-tight text-black">
                   Check here if mobile deposit
                 </span>
               </div>
 
-              <div className="space-y-6 opacity-10">
-                <div className="border-b-[1.5px] border-black w-full"></div>
-                <div className="border-b-[1.5px] border-black w-full"></div>
-                <div className="border-b-[1.5px] border-black w-full"></div>
+              <div className="relative min-h-[100px] flex items-center justify-center mb-6">
+                {endorsementSignature ? (
+                  <img 
+                    src={endorsementSignature} 
+                    alt="Endorsement Signature" 
+                    className="max-h-[100px] max-w-full object-contain mix-blend-multiply" 
+                  />
+                ) : (
+                  <div className="space-y-6 w-full opacity-10">
+                    <div className="border-b-[1.5px] border-black w-full"></div>
+                    <div className="border-b-[1.5px] border-black w-full"></div>
+                    <div className="border-b-[1.5px] border-black w-full"></div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-8 pt-4 border-t-[2px] border-black border-dashed">
