@@ -28,7 +28,6 @@ export function SignaturePad({ onSave, onClear }: SignaturePadProps) {
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
     
-    // If in type mode, clear and draw text
     if (mode === 'type' && typedName) {
       clearCanvas(false);
       ctx.font = 'italic 48px "Dancing Script", cursive';

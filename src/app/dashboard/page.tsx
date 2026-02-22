@@ -1,22 +1,19 @@
 'use client';
 
+import { useMemo } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Wallet, FileText, TrendingUp, Building2, Clock, Loader2 } from 'lucide-react';
-import Link from 'next/link';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, where } from 'firebase/firestore';
 import { Transaction, BankAccount } from '@/lib/types';
 import { TransactionList } from '@/components/dashboard/transaction-list';
-import { useMemo } from 'react';
 
 export default function DashboardOverview() {
   const db = useFirestore();
   const { user } = useUser();
 
-  // We filter by senderUserProfileId to satisfy security rules.
-  // We remove orderBy temporarily to avoid composite index requirements which can cause permission errors.
-  // Sorting is handled client-side for the overview.
   const transactionsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -34,7 +31,6 @@ export default function DashboardOverview() {
   const { data: rawTransactions, isLoading: txLoading } = useCollection<Transaction>(transactionsQuery);
   const { data: accounts, isLoading: accLoading } = useCollection<BankAccount>(accountsQuery);
 
-  // Client-side sorting and limiting
   const transactions = useMemo(() => {
     if (!rawTransactions) return [];
     return [...rawTransactions]
