@@ -229,7 +229,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                   <img 
                     src={transaction.signatureData} 
                     alt="Signature" 
-                    className="absolute bottom-1 max-h-[70px] max-w-full object-contain mix-blend-multiply blue-ink" 
+                    className="absolute bottom-1 max-h-[80px] max-w-full object-contain mix-blend-multiply blue-ink" 
                   />
                 )}
               </div>
@@ -267,7 +267,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
               <p className="text-[9pt] font-black uppercase tracking-[0.1em] text-black mb-1">Endorse Here</p>
               
               <div className="relative w-full">
-                <div className="relative border-b-2 border-black w-full h-8 flex items-end justify-center">
+                <div className="relative border-b-2 border-black w-full h-6 flex items-end justify-center">
                   {endorsementSignature && (
                     <img 
                       src={endorsementSignature} 
@@ -276,8 +276,7 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                     />
                   )}
                 </div>
-                <div className="border-b-2 border-black w-full h-4"></div>
-                <div className="border-b-2 border-black w-full h-4"></div>
+                <div className="border-b-2 border-black w-full h-3"></div>
               </div>
 
               <div className="mt-1 space-y-1 flex-1">
@@ -293,10 +292,10 @@ export default function PrintCheckPage({ params }: { params: Promise<{ id: strin
                 )}
 
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="w-6 h-6 border-[3.5px] border-black flex items-center justify-center shrink-0 bg-white shadow-sm">
-                    {isMobileDeposit && <Check className="w-5 h-5 text-black stroke-[4px]" />}
+                  <div className="w-5 h-5 border-[3px] border-black flex items-center justify-center shrink-0 bg-white shadow-sm">
+                    {isMobileDeposit && <Check className="w-4 h-4 text-black stroke-[4px]" />}
                   </div>
-                  <span className="text-[8.5pt] font-black uppercase text-black leading-tight tracking-tight">
+                  <span className="text-[8pt] font-black uppercase text-black leading-tight tracking-tight">
                     Check here for mobile deposit
                   </span>
                 </div>
